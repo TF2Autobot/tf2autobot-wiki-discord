@@ -133,7 +133,7 @@ export default class Commands {
                 return message.reply(`Correct Usage: ${prefix}prefix newPrefix.`);
             }
             let newPrefix = args.shift();
-            options.handleOption(command, newPrefix);
+            options.handleBaseOption("prefix", newPrefix);
             return message.reply(`Changed prefix from ${prefix} to ${newPrefix}`);
         } else if (command === 'add') {
             if (args.length < 2 && !message.attachments.first()) {
@@ -186,7 +186,7 @@ export default class Commands {
                 return message.reply(`Correct Usage: ${prefix}setRole roleID.`);
             }
             let newRole = args.shift();
-            options.handleOption('roleID', newRole);
+            options.handleBaseOption('roleID', newRole);
             return message.reply(`Changed roleID to ${newRole}`);
         } else if (command === 'list') {
             const autoresponses = Object.assign({}, options.currentOptions);

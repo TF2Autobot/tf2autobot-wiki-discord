@@ -25,7 +25,11 @@ export default class Options {
             this.currentOptions = JSON.parse(readFileSync(this.optionsPath));
         }
     }
-
+    // Only for prefix and roleID
+    public handleBaseOption(option: "prefix" | "roleID", newParam: string) {
+        this.currentOptions[option] = newParam
+        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, "\t"), { encoding: 'utf8' });
+    }
     public handleOption(option: string, content: string, files?: MessageAttachment[]): void {
         this.currentOptions[option] = { content, files };
         writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, "\t"), { encoding: 'utf8' });
