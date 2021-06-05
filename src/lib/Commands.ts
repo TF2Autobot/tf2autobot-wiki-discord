@@ -38,37 +38,42 @@ export default class Commands {
         }, 3000);
     }
 
+    private checkSpam(command: string, id: string) {
+        clearTimeout(this.recentlySentTimeouts.reply[id]);
+        clearTimeout(this.recentlySentTimeouts.command[command]);
+        this.recentlySent.command[command] ??= 0;
+        this.recentlySent.command[command]++;
+
+        // Allows the command to be used once every 3 seconds.
+        if (
+            this.recentlySent.command[command] > 1
+        ) {
+            this.resetAfter3Seconds('command', command);
+            return `I have just sent a reply for that ⛔`;
+        }
+
+        this.recentlySent.reply[id] ??= 0;
+        this.recentlySent.reply[id]++;
+
+        // Allows the command to be used twice every 3 seconds.
+        if (
+            this.recentlySent.reply[id] > 2
+        ) {
+            this.resetAfter3Seconds('reply', id);
+            return `Bruh stop spamming ⛔`;
+        }
+
+        this.resetAfter3Seconds('reply', id);
+        this.resetAfter3Seconds('command', command);
+    }
+
     //message should be type of Message from discord but that way typescript throws error on line 8
     public async handleMessage(message: Message): Promise<Message> {
         //check for auto-response and if found dont continue
         if (channels.includes(message.channel.id)) {
             const messageOptions = options.getOption(message.content)
             if (messageOptions) {
-                clearTimeout(this.recentlySentTimeouts.reply[message.author.id]);
-                clearTimeout(this.recentlySentTimeouts.command[message.content]);
-                this.recentlySent.command[message.content] = (this.recentlySent.command[message.content] ?? -1) + 1;
-
-                if (
-                    this.recentlySent.command[message.content] !== undefined &&
-                    this.recentlySent.command[message.content] > 1
-                ) {
-                    this.resetAfter3Seconds('command', message.content);
-                    return message.reply(`I have just sent a reply for that ⛔`);
-                }
-
-                this.recentlySent.reply[message.author.id] = (this.recentlySent.reply[message.author.id] ?? -1) + 1;
-
-                if (
-                    this.recentlySent.reply[message.author.id] !== undefined &&
-                    this.recentlySent.reply[message.author.id] > 2
-                ) {
-                    this.resetAfter3Seconds('reply', message.author.id);
-                    return message.reply(`Bruh stop spamming ⛔`);
-                }
-
-                this.resetAfter3Seconds('reply', message.author.id);
-                this.resetAfter3Seconds('command', message.content);
-                return message.reply(options.currentOptions[message.content]);
+                return message.reply(this.checkSpam(message.content, message.author.id) || options.currentOptions[message.content]);
             }
         }
 
@@ -90,31 +95,7 @@ export default class Commands {
                 delete autoresponses.prefix;
                 delete autoresponses.roleID;
 
-                clearTimeout(this.recentlySentTimeouts.reply[message.author.id]);
-                clearTimeout(this.recentlySentTimeouts.command[message.content]);
-                this.recentlySent.command[command] = (this.recentlySent.command[command] ?? -1) + 1;
-
-                if (
-                    this.recentlySent.command[command] !== undefined &&
-                    this.recentlySent.command[command] > 1
-                ) {
-                    this.resetAfter3Seconds('command', command);
-                    return message.reply(`I have just sent a reply for that ⛔`);
-                }
-
-                this.recentlySent.reply[message.author.id] = (this.recentlySent.reply[message.author.id] ?? -1) + 1;
-
-                if (
-                    this.recentlySent.reply[message.author.id] !== undefined &&
-                    this.recentlySent.reply[message.author.id] > 2
-                ) {
-                    this.resetAfter3Seconds('reply', message.author.id);
-                    return message.reply(`Bruh stop spamming ⛔`);
-                }
-
-                this.resetAfter3Seconds('command', message.content);
-                this.resetAfter3Seconds('reply', message.author.id);
-                return message.reply(
+                return message.reply(this.checkSpam(message.content, message.author.id) ||
                     `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
                 );
             }
