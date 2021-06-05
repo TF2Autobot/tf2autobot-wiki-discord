@@ -3,7 +3,7 @@ import { Message } from 'discord.js';
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
 export default class Commands {
-    private recentlySentReply = {};
+    private recentlySentReply: { [id: string]: number } = {};
 
     private poller: NodeJS.Timeout;
 
@@ -22,10 +22,11 @@ export default class Commands {
         //check for auto-response and if found dont continue
         if (channels.includes(message.channel.id)) {
             if (options.currentOptions[message.content] != undefined) {
-                this.recentlySentReply[message.author.id] =
-                    (this.recentlySentReply[message.author.id] === undefined
-                        ? 0
-                        : this.recentlySentReply[message.author.id]) + 1;
+                if (this.recentlySentReply === undefined) {
+                    this.recentlySentReply = {}; // not sure why undefined here. should already defined 🤔
+                }
+
+                this.recentlySentReply[message.author.id] = (this.recentlySentReply[message.author.id] || -1) + 1;
 
                 if (
                     this.recentlySentReply[message.author.id] !== undefined &&
@@ -56,10 +57,11 @@ export default class Commands {
                 delete autoresponses.prefix;
                 delete autoresponses.roleID;
 
-                this.recentlySentReply[message.author.id] =
-                    (this.recentlySentReply[message.author.id] === undefined
-                        ? 0
-                        : this.recentlySentReply[message.author.id]) + 1;
+                if (this.recentlySentReply === undefined) {
+                    this.recentlySentReply = {}; // not sure why undefined here. should already defined 🤔
+                }
+
+                this.recentlySentReply[message.author.id] = (this.recentlySentReply[message.author.id] || -1) + 1;
 
                 if (
                     this.recentlySentReply[message.author.id] !== undefined &&
