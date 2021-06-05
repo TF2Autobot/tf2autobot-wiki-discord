@@ -14,13 +14,13 @@ export default class Commands {
         }
 
         //dont continue if doesnt start with prefix or is an other bot
-        let prefix = options.currentOptions.prefix;
-        let roleID = options.currentOptions.roleID;
+        const prefix = options.currentOptions.prefix;
+        const roleID = options.currentOptions.roleID;
         if (!message.content.startsWith(prefix) || message.author.bot) {
             return;
         }
 
-        let isOwner = message.guild.ownerID === message.author.id;
+        const isOwner = message.guild.ownerID === message.author.id;
         if (!message.member.roles.cache.some(r => r.id == roleID) && !isOwner) {
             return;
         }
@@ -82,6 +82,12 @@ export default class Commands {
             let newRole = args.shift();
             options.handleOption('roleID', newRole);
             return message.reply(`Changed roleID to ${newRole}`);
+        } else if (command === 'list') {
+            const autoresponses = Object.assign({}, options.currentOptions);
+            delete autoresponses.prefix;
+            delete autoresponses.roleID;
+
+            return message.reply(`Here's a list of available auto-response keywords:\n -${Object.keys(autoresponses).join('\n -')}`);
         }
     }
 }
