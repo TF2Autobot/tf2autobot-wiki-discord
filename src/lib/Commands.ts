@@ -20,22 +20,20 @@ function commandParser(message: string): [string, string] {
 export default class Commands {
     private recentlySent: { reply: { [id: string]: number }; command: { [cmd: string]: number } };
 
-    private resetRecentlySentReply: NodeJS.Timeout;
-
-    private resetRecentlySentCommand: NodeJS.Timeout;
+    private recentlySentTimeouts: { reply: { [id: string]: number }; command: { [cmd: string]: NodeJS.Timeout } };
 
     init(): void {
         this.recentlySent = { reply: {}, command: {} };
+        this.recentlySentTimeouts = { reply: {}, command: {} };
     }
 
     stop(): void {
         this.recentlySent = undefined;
-        this.resetRecentlySentReply = undefined;
-        this.resetRecentlySentCommand = undefined;
+        this.recentlySentTimeouts = undefined;
     }
 
     private resetAfter3Seconds(type: 'reply' | 'command', idOrCommand: string): void {
-        this[`resetRecentlySent${type.charAt(0).toUpperCase() + type.slice(1)}`] = setTimeout(() => {
+        this.recentlySentTimeouts[type][idOrCommand] = setTimeout(() => {
             delete this.recentlySent[type][idOrCommand];
         }, 3000);
     }
@@ -46,8 +44,8 @@ export default class Commands {
         if (channels.includes(message.channel.id)) {
             const messageOptions = options.getOption(message.content)
             if (messageOptions) {
-                clearTimeout(this.resetRecentlySentReply);
-                clearTimeout(this.resetRecentlySentCommand);
+                clearTimeout(this.recentlySentTimeouts.reply[message.author.id]);
+                clearTimeout(this.recentlySentTimeouts.command[message.content]);
                 this.recentlySent.command[message.content] = (this.recentlySent.command[message.content] ?? -1) + 1;
 
                 if (
@@ -69,6 +67,7 @@ export default class Commands {
                 }
 
                 this.resetAfter3Seconds('reply', message.author.id);
+                this.resetAfter3Seconds('command', message.content);
                 return message.reply(options.currentOptions[message.content]);
             }
         }
@@ -91,8 +90,8 @@ export default class Commands {
                 delete autoresponses.prefix;
                 delete autoresponses.roleID;
 
-                clearTimeout(this.resetRecentlySentReply);
-                clearTimeout(this.resetRecentlySentCommand);
+                clearTimeout(this.recentlySentTimeouts.reply[message.author.id]);
+                clearTimeout(this.recentlySentTimeouts.command[message.content]);
                 this.recentlySent.command[command] = (this.recentlySent.command[command] ?? -1) + 1;
 
                 if (
@@ -113,6 +112,8 @@ export default class Commands {
                     return message.reply(`Bruh stop spamming ⛔`);
                 }
 
+                this.resetAfter3Seconds('command', message.content);
+                this.resetAfter3Seconds('reply', message.author.id);
                 return message.reply(
                     `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
                 );
