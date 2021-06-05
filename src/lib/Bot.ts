@@ -21,6 +21,7 @@ export default class Bot {
 
     public stop(): void {
         this.commands.stop();
+        this.client.destroy();
     }
 
     private ClientReady() {
