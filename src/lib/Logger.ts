@@ -1,4 +1,3 @@
-
 import winston from 'winston';
 
 const levels = {
@@ -19,8 +18,6 @@ const colors = {
 
 winston.addColors(colors);
 
-
-
 const consoleFormat = winston.format.combine(
     winston.format.timestamp({
         format: 'YYYY-MM-DD HH:mm:ss'
@@ -30,13 +27,13 @@ const consoleFormat = winston.format.combine(
     winston.format.printf(info => {
         let msg = `${info.timestamp} ${info.level}: ${info.message}`;
 
-        const splat = info[(Symbol.for('splat') as unknown) as string];
+        const splat = info[Symbol.for('splat') as unknown as string];
 
         if (splat) {
             if (splat.length === 1) {
                 msg += ` ${JSON.stringify(splat[0])}`;
             } else if (splat.length > 1) {
-                msg += ` ${JSON.stringify(info[(Symbol.for('splat') as unknown) as string])}`;
+                msg += ` ${JSON.stringify(info[Symbol.for('splat') as unknown as string])}`;
             }
         }
 
@@ -44,13 +41,14 @@ const consoleFormat = winston.format.combine(
     })
 );
 
-
 const logger = winston.createLogger({
     levels: levels
 });
 
-logger.add(new winston.transports.Console({
-    format: consoleFormat,
-}));
+logger.add(
+    new winston.transports.Console({
+        format: consoleFormat
+    })
+);
 
 export default logger;

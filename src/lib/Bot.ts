@@ -1,11 +1,11 @@
-import {Client} from 'discord.js';
+import { Client } from 'discord.js';
 import log from './Logger';
 import Commands from './Commands';
 
 export default class Bot {
     readonly client: Client;
-    
-    readonly commands : Commands;
+
+    readonly commands: Commands;
 
     constructor() {
         this.client = new Client();
@@ -13,7 +13,7 @@ export default class Bot {
         this.commands = new Commands();
     }
 
-    public start() : void {
+    public start(): void {
         this.client.on('ready', this.ClientReady.bind(this));
         this.client.on('message', this.commands.handleMessage);
     }
@@ -21,5 +21,4 @@ export default class Bot {
     private ClientReady() {
         log.info('Logged in as ' + this.client.user.tag);
     }
-    
 }
