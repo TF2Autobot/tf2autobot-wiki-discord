@@ -3,13 +3,35 @@ import { Message } from 'discord.js';
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
 export default class Commands {
+    private recentlySentReply = {};
+
+    private poller: NodeJS.Timeout;
+
+    init(): void {
+        this.poller = setInterval(() => {
+            this.recentlySentReply = {};
+        }, 3000);
+    }
+
+    stop(): void {
+        this.poller = undefined;
+    }
+
     //message should be type of Message from discord but that way typescript throws error on line 8
     public async handleMessage(message: Message): Promise<Message> {
         //check for auto-response and if found dont continue
         if (channels.includes(message.channel.id)) {
             if (options.currentOptions[message.content] != undefined) {
-                message.reply(options.currentOptions[message.content]);
-                return;
+                this.recentlySentReply[message.author.id] =
+                    this.recentlySentReply[message.author.id] === undefined
+                        ? 0
+                        : this.recentlySentReply[message.author.id]++;
+
+                if (this.recentlySentReply[message.author.id] > 2) {
+                    return message.reply(`Bruh stop spamming :prettypepepuke:`);
+                }
+
+                return message.reply(options.currentOptions[message.content]);
             }
         }
 
@@ -30,6 +52,15 @@ export default class Commands {
                 const autoresponses = Object.assign({}, options.currentOptions);
                 delete autoresponses.prefix;
                 delete autoresponses.roleID;
+
+                this.recentlySentReply[message.author.id] =
+                    this.recentlySentReply[message.author.id] === undefined
+                        ? 0
+                        : this.recentlySentReply[message.author.id]++;
+
+                if (this.recentlySentReply[message.author.id] > 2) {
+                    return message.reply(`Bruh stop spamming :prettypepepuke:`);
+                }
 
                 return message.reply(
                     `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
