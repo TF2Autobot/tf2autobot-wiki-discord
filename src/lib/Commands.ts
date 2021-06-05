@@ -23,11 +23,14 @@ export default class Commands {
         if (channels.includes(message.channel.id)) {
             if (options.currentOptions[message.content] != undefined) {
                 this.recentlySentReply[message.author.id] =
-                    this.recentlySentReply[message.author.id] === undefined
+                    (this.recentlySentReply[message.author.id] === undefined
                         ? 0
-                        : this.recentlySentReply[message.author.id]++;
+                        : this.recentlySentReply[message.author.id]) + 1;
 
-                if (this.recentlySentReply[message.author.id] > 2) {
+                if (
+                    this.recentlySentReply[message.author.id] !== undefined &&
+                    this.recentlySentReply[message.author.id] > 2
+                ) {
                     return message.reply(`Bruh stop spamming :prettypepepuke:`);
                 }
 
@@ -54,11 +57,14 @@ export default class Commands {
                 delete autoresponses.roleID;
 
                 this.recentlySentReply[message.author.id] =
-                    this.recentlySentReply[message.author.id] === undefined
+                    (this.recentlySentReply[message.author.id] === undefined
                         ? 0
-                        : this.recentlySentReply[message.author.id]++;
+                        : this.recentlySentReply[message.author.id]) + 1;
 
-                if (this.recentlySentReply[message.author.id] > 2) {
+                if (
+                    this.recentlySentReply[message.author.id] !== undefined &&
+                    this.recentlySentReply[message.author.id] > 2
+                ) {
                     return message.reply(`Bruh stop spamming :prettypepepuke:`);
                 }
 
