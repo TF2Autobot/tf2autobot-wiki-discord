@@ -75,7 +75,7 @@ export default class Commands {
             if (messageOptions) {
                 const reply = this.checkSpam(messageOptions[0], message.author.id) || messageOptions[1]
                 // Typescript goes crazy for some reason if I don't make this any
-                return void message.reply(reply as any);
+                return message.reply(reply as any);
             }
         }
 
