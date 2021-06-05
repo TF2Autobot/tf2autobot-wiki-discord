@@ -1,10 +1,13 @@
-import {options} from '../app'
+import { options } from '../app';
+import { Message } from 'discord.js';
+const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
+
 export default class Commands {
 
     //message should be type of Message from discord but that way typescript throws error on line 8
-    public async handleMessage(message) : Promise<void> {
+    public async handleMessage(message: Message) : Promise<Message> {
         //check for auto-response and if found dont continue
-        if(message.channel.name.toLowerCase() === 'help-english') {
+        if(channels.includes(message.channel.id)) {
             if(options.currentOptions[message.content] != undefined) {
                 message.reply(options.currentOptions[message.content]);
                 return;
@@ -24,9 +27,8 @@ export default class Commands {
         }
 
         //check if its on correct channel
-        if(message.channel.name.toLowerCase() != 'help-english') {
-            let helpID = message.guild.channels.cache.find(channel => channel.name === "help-english");
-            return message.reply(`Any commands should be run on ${helpID}`);
+        if(!channels.includes(message.channel.id)) {
+            return message.reply(`Any commands should be run on ${channels.map(channel => `<#${channel}`).join(', ')}`);
         }
 
         //get arguments and command
