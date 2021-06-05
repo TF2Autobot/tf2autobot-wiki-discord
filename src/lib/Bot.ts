@@ -15,7 +15,7 @@ export default class Bot {
 
     public start(): void {
         this.client.on('ready', this.ClientReady.bind(this));
-        this.client.on('message', this.commands.handleMessage);
+        this.client.on('message', message => this.commands.handleMessage(message));
         this.commands.init();
     }
 
