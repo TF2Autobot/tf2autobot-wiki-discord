@@ -26,8 +26,8 @@ export default class Commands {
         }
 
         //check if its on correct channel
-        if (!channels.includes(message.channel.id)) {
-            return message.reply(`Any commands should be run on ${channels.map(channel => `<#${channel}`).join(', ')}`);
+        if (!channels.includes(message.channel.id) && channels.length != 0) {
+            return message.reply(`Any commands should be run on ${channels.map(channel => `<#${channel}>`).join(', ')}`);
         }
 
         //get arguments and command
