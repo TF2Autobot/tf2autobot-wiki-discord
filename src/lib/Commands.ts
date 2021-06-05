@@ -18,18 +18,26 @@ function commandParser(message: string): [string, string] {
 }
 
 export default class Commands {
-    private recentlySentReply: { [id: string]: number } = {};
+    private recentlySent: { reply: { [id: string]: number }; command: { [cmd: string]: number } };
 
-    private poller: NodeJS.Timeout;
+    private resetRecentlySentReply: NodeJS.Timeout;
+
+    private resetRecentlySentCommand: NodeJS.Timeout;
 
     init(): void {
-        this.poller = setInterval(() => {
-            this.recentlySentReply = {};
-        }, 3000);
+        this.recentlySent = { reply: {}, command: {} };
     }
 
     stop(): void {
-        this.poller = undefined;
+        this.recentlySent = undefined;
+        this.resetRecentlySentReply = undefined;
+        this.resetRecentlySentCommand = undefined;
+    }
+
+    private resetAfter3Seconds(type: 'reply' | 'command', idOrCommand: string): void {
+        this[`resetRecentlySent${type.charAt(0).toUpperCase() + type.slice(1)}`] = setTimeout(() => {
+            delete this.recentlySent[type][idOrCommand];
+        }, 3000);
     }
 
     //message should be type of Message from discord but that way typescript throws error on line 8
@@ -38,20 +46,30 @@ export default class Commands {
         if (channels.includes(message.channel.id)) {
             const messageOptions = options.getOption(message.content)
             if (messageOptions) {
-                if (this.recentlySentReply === undefined) {
-                    this.recentlySentReply = {}; // not sure why undefined here. should already defined 🤔
-                }
-
-                this.recentlySentReply[message.author.id] = (this.recentlySentReply[message.author.id] ?? -1) + 1;
+                clearTimeout(this.resetRecentlySentReply);
+                clearTimeout(this.resetRecentlySentCommand);
+                this.recentlySent.command[message.content] = (this.recentlySent.command[message.content] ?? -1) + 1;
 
                 if (
-                    this.recentlySentReply[message.author.id] !== undefined &&
-                    this.recentlySentReply[message.author.id] > 2
+                    this.recentlySent.command[message.content] !== undefined &&
+                    this.recentlySent.command[message.content] > 1
                 ) {
-                    return message.reply(`Bruh stop spamming :prettypepepuke:`);
+                    this.resetAfter3Seconds('command', message.content);
+                    return message.reply(`I have just sent a reply for that ⛔`);
                 }
-                message.reply(messageOptions);
-                return;
+
+                this.recentlySent.reply[message.author.id] = (this.recentlySent.reply[message.author.id] ?? -1) + 1;
+
+                if (
+                    this.recentlySent.reply[message.author.id] !== undefined &&
+                    this.recentlySent.reply[message.author.id] > 2
+                ) {
+                    this.resetAfter3Seconds('reply', message.author.id);
+                    return message.reply(`Bruh stop spamming ⛔`);
+                }
+
+                this.resetAfter3Seconds('reply', message.author.id);
+                return message.reply(options.currentOptions[message.content]);
             }
         }
 
@@ -73,17 +91,26 @@ export default class Commands {
                 delete autoresponses.prefix;
                 delete autoresponses.roleID;
 
-                if (this.recentlySentReply === undefined) {
-                    this.recentlySentReply = {}; // not sure why undefined here. should already defined 🤔
-                }
-
-                this.recentlySentReply[message.author.id] = (this.recentlySentReply[message.author.id] ?? -1) + 1;
+                clearTimeout(this.resetRecentlySentReply);
+                clearTimeout(this.resetRecentlySentCommand);
+                this.recentlySent.command[command] = (this.recentlySent.command[command] ?? -1) + 1;
 
                 if (
-                    this.recentlySentReply[message.author.id] !== undefined &&
-                    this.recentlySentReply[message.author.id] > 2
+                    this.recentlySent.command[command] !== undefined &&
+                    this.recentlySent.command[command] > 1
                 ) {
-                    return message.reply(`Bruh stop spamming :prettypepepuke:`);
+                    this.resetAfter3Seconds('command', command);
+                    return message.reply(`I have just sent a reply for that ⛔`);
+                }
+
+                this.recentlySent.reply[message.author.id] = (this.recentlySent.reply[message.author.id] ?? -1) + 1;
+
+                if (
+                    this.recentlySent.reply[message.author.id] !== undefined &&
+                    this.recentlySent.reply[message.author.id] > 2
+                ) {
+                    this.resetAfter3Seconds('reply', message.author.id);
+                    return message.reply(`Bruh stop spamming ⛔`);
                 }
 
                 return message.reply(
