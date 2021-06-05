@@ -32,7 +32,7 @@ export default class Commands {
                 delete autoresponses.roleID;
 
                 return message.reply(
-                    `Here's a list of available auto-response keywords:\n -${Object.keys(autoresponses).join('\n -')}`
+                    `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
                 );
             }
 
@@ -100,7 +100,7 @@ export default class Commands {
             delete autoresponses.roleID;
 
             return message.reply(
-                `Here's a list of available auto-response keywords:\n -${Object.keys(autoresponses).join('\n -')}`
+                `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
             );
         }
     }
