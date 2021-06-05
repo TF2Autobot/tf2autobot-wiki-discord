@@ -20,7 +20,7 @@ function commandParser(message: string): [string, string] {
 export default class Commands {
     private recentlySent: { reply: { [id: string]: number }; command: { [cmd: string]: number } };
 
-    private recentlySentTimeouts: { reply: { [id: string]: number }; command: { [cmd: string]: NodeJS.Timeout } };
+    private recentlySentTimeouts: { reply: { [id: string]: NodeJS.Timeout }; command: { [cmd: string]: NodeJS.Timeout } };
 
     init(): void {
         this.recentlySent = { reply: {}, command: {} };
