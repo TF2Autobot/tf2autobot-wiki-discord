@@ -95,9 +95,7 @@ export default class Commands {
                 delete autoresponses.prefix;
                 delete autoresponses.roleID;
 
-                return message.reply(this.checkSpam(command, message.author.id) ||
-                    `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
-                );
+                return message.reply(this.checkSpam(command, message.author.id) || options.getList());
             }
 
             return;
@@ -176,9 +174,7 @@ export default class Commands {
             delete autoresponses.prefix;
             delete autoresponses.roleID;
 
-            return message.reply(
-                `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
-            );
+            return message.reply(options.getList());
         } else if (command === 'alias') {
             if (args.length < 2) {
                 return message.reply(`Correct Usage: ${prefix}alias !help help.\nor: "not found" file not found`);
@@ -188,7 +184,7 @@ export default class Commands {
                 if (["prefix", "roleID"].includes(devAlias)) return message.reply(`Can not alias base value ${devAlias} as a command.`)
                 if (["prefix", "roleID"].includes(devExistingCMD)) return message.reply(`Can not alias base value ${devExistingCMD} as a target.`)
                 if (options.currentOptions[devExistingCMD] === undefined) return message.reply(`Can not target alias for ${'`' + devExistingCMD + '`'} it doesn't exist.`);
-                if (options.currentOptions[devAlias] === undefined) return message.reply(`Can not alias base value ${devAlias} as a command it already exists remove it first.`)
+                if (typeof options.currentOptions[devAlias] === "string") return message.reply(`Can not alias ${devAlias} as it already exists remove it first.`)
 
                 options.handleBaseOptionOrAlias(devAlias, devExistingCMD);
                 return message.channel.send(`Added alias ${devAlias} => ${devExistingCMD}`);
