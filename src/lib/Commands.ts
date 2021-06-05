@@ -20,19 +20,31 @@ export default class Commands {
             return;
         }
 
+        //get arguments and command
+        const args = message.content.slice(prefix.length).trim().split(/ +/);
+        const command = args.shift().trim();
+
         const isOwner = message.guild.ownerID === message.author.id;
         if (!message.member.roles.cache.some(r => r.id == roleID) && !isOwner) {
+            if (command === 'list') {
+                const autoresponses = Object.assign({}, options.currentOptions);
+                delete autoresponses.prefix;
+                delete autoresponses.roleID;
+
+                return message.reply(
+                    `Here's a list of available auto-response keywords:\n -${Object.keys(autoresponses).join('\n -')}`
+                );
+            }
+
             return;
         }
 
         //check if its on correct channel
         if (!channels.includes(message.channel.id) && channels.length != 0) {
-            return message.reply(`Any commands should be run on ${channels.map(channel => `<#${channel}>`).join(', ')}`);
+            return message.reply(
+                `Any commands should be run on ${channels.map(channel => `<#${channel}>`).join(', ')}`
+            );
         }
-
-        //get arguments and command
-        const args = message.content.slice(prefix.length).trim().split(/ +/);
-        const command = args.shift().trim();
 
         if (command === 'prefix') {
             //check for missing arguments cause people dumb
@@ -87,7 +99,9 @@ export default class Commands {
             delete autoresponses.prefix;
             delete autoresponses.roleID;
 
-            return message.reply(`Here's a list of available auto-response keywords:\n -${Object.keys(autoresponses).join('\n -')}`);
+            return message.reply(
+                `Here's a list of available auto-response keywords:\n -${Object.keys(autoresponses).join('\n -')}`
+            );
         }
     }
 }
