@@ -53,7 +53,7 @@ export default class Options {
             cmds[param] ??= [];
             cmds[param].push(key)
         })
-        return `Here's a list of available auto-response keywords:\n- ${Object.keys(cmds).sort().map(key => cmds[key].join(' | '))}`
+        return `Here's a list of available auto-response keywords:\n- ${Object.keys(cmds).sort().map(key => cmds[key].join(' | ')).join('\n- ')}`
     }
     public deleteCommand(command: string) {
         //delete aliases as well since otherwise they'd be pointing to nowhere.
