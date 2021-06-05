@@ -115,7 +115,7 @@ export default class Commands {
                 return message.reply(`Correct Usage: ${prefix}prefix newPrefix.`);
             }
             let newPrefix = args.shift();
-            options.handleBaseOption("prefix", newPrefix);
+            options.handleBaseOptionOrAlias("prefix", newPrefix);
             return message.reply(`Changed prefix from ${prefix} to ${newPrefix}`);
         } else if (command === 'add') {
             if (args.length < 2 && !message.attachments.first()) {
@@ -142,8 +142,9 @@ export default class Commands {
             }
             let delCommand = args.filter(i => i).join(' ');
             if (["prefix", "roleID"].includes(delCommand)) return message.reply(`Can not remove base value ${delCommand}.`)
+            const isAlias = typeof options.currentOptions[delCommand] === "string" ? "alias" : ""
             options.deleteCommand(delCommand);
-            return message.reply(`Deleted auto-reply for ${'`' + delCommand + '`'}`);
+            return message.reply(`Deleted auto-reply for ${isAlias} ${'`' + delCommand + '`'}`);
         } else if (command === 'edit') {
             //check for missing arguments cause people dumb
             if (args.length < 2 && !message.attachments.first()) {
@@ -155,7 +156,7 @@ export default class Commands {
                 if (options.currentOptions[devCommand] != undefined) {
                     options.handleOption(devCommand, devResponse, message.attachments.array());
                     return message.channel.send(
-                        `Added auto-reply: ${'`' + devCommand + '`'}, ${devResponse ? ("with the response: \n> " + devResponse) : "with the attachment: \n>"}.`,
+                        `Edited auto-reply: ${'`' + devCommand + '`'}, ${devResponse ? ("with the response: \n> " + devResponse) : "with the attachment: \n>"}.`,
                         { files: message.attachments.array() }
                     );
                 }
@@ -168,7 +169,7 @@ export default class Commands {
                 return message.reply(`Correct Usage: ${prefix}setRole roleID.`);
             }
             let newRole = args.shift();
-            options.handleBaseOption('roleID', newRole);
+            options.handleBaseOptionOrAlias('roleID', newRole);
             return message.reply(`Changed roleID to ${newRole}`);
         } else if (command === 'list') {
             const autoresponses = Object.assign({}, options.currentOptions);
@@ -178,6 +179,38 @@ export default class Commands {
             return message.reply(
                 `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
             );
+        } else if (command === 'alias') {
+            if (args.length < 2) {
+                return message.reply(`Correct Usage: ${prefix}alias !help help.\nor: "not found" file not found`);
+            }
+            try {
+                const [devAlias, devExistingCMD] = commandParser(message.content);
+                if (["prefix", "roleID"].includes(devAlias)) return message.reply(`Can not alias base value ${devAlias} as a command.`)
+                if (["prefix", "roleID"].includes(devExistingCMD)) return message.reply(`Can not alias base value ${devExistingCMD} as a target.`)
+                if (options.currentOptions[devExistingCMD] === undefined) return message.reply(`Can not target alias for ${'`' + devExistingCMD + '`'} it doesn't exist.`);
+                if (options.currentOptions[devAlias] === undefined) return message.reply(`Can not alias base value ${devAlias} as a command it already exists remove it first.`)
+
+                options.handleBaseOptionOrAlias(devAlias, devExistingCMD);
+                return message.channel.send(`Added alias ${devAlias} => ${devExistingCMD}`);
+            } catch (err) {
+                return message.reply(err)
+            }
+        } else if (command === 'rename') {
+            if (args.length < 2) {
+                return message.reply(`Correct Usage: ${prefix}rename !help help.\nor: "not found" file not found`);
+            }
+            try {
+                const [devCurrent, devRename] = commandParser(message.content);
+                if (["prefix", "roleID"].includes(devCurrent)) return message.reply(`Can not rename base value ${devCurrent}.`)
+                if (["prefix", "roleID"].includes(devRename)) return message.reply(`Can not rename to base value ${devRename}.`)
+                if (options.currentOptions[devCurrent] === undefined) return message.reply(`Can not rename ${'`' + devCurrent + '`'} it doesn't exist.`);
+                if (options.currentOptions[devRename] === undefined) return message.reply(`Can not rename to ${'`' + devRename + '`'} it already exists.`);
+
+                options.rePointAliases(devCurrent, devRename);
+                delete Object.assign(options, { [devRename]: options[devCurrent] })[devCurrent];
+            } catch (err) {
+                return message.reply(err)
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ export default class Options {
         }
     }
     // Only for prefix and roleID
-    public handleBaseOption(option: "prefix" | "roleID", newParam: string) {
+    public handleBaseOptionOrAlias(option: string, newParam: string) {
         this.currentOptions[option] = newParam
         writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, "\t"), { encoding: 'utf8' });
     }
@@ -35,11 +35,44 @@ export default class Options {
         writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, "\t"), { encoding: 'utf8' });
     }
     public getOption(option: string): MessageOptions {
+        // turn aliases to main so they'll still receive I have just sent a reply for that
+        if (typeof this.currentOptions[option] === "string") option = this.currentOptions[option];
         return this.currentOptions[option] as MessageOptions;
     }
 
+    public getList() {
+        const autoresponses = Object.assign({}, this.currentOptions);
+        delete autoresponses.prefix;
+        delete autoresponses.roleID;
+        const cmds: {
+            [key: string]: string
+        } = {}
+        Object.keys(autoresponses).forEach(key => {
+            const param = typeof autoresponses[key] === "string" ? autoresponses[key] : key;
+            cmds[param] ??= "";
+            cmds[param] += `${key} `
+        })
+        return `Here's a list of available auto-response keywords:\n- ${Object.keys(cmds).sort().map(key => key.trim().replace(/  +/g, " | ")).join('\n- ')}`
+    }
     public deleteCommand(command: string) {
+        //delete aliases as well since otherwise they'd be pointing to nowhere.
+        if (typeof this.currentOptions[command] !== "string") {
+            // Delete aliases for the command
+            this.rePointAliases(command)
+        }
         delete this.currentOptions[command];
         writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, "\t"), { encoding: 'utf8' });
+    }
+
+    public rePointAliases(command: string, newCommandOrDelete?: string | undefined) {
+        Object.keys(this.currentOptions).forEach(key => {
+            if (this.currentOptions[key] === command) {
+                if (newCommandOrDelete === undefined) {
+                    delete this.currentOptions[key]
+                } else {
+                    this.currentOptions[key] = newCommandOrDelete
+                }
+            }
+        })
     }
 }
