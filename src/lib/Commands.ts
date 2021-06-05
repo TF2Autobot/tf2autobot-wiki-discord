@@ -72,7 +72,7 @@ export default class Commands {
         //check for auto-response and if found dont continue
         if (channels.includes(message.channel.id)) {
             const messageOptions = options.getOption(message.content)
-            if (messageOptions) {
+            if (messageOptions[1]) {
                 const reply = this.checkSpam(messageOptions[0], message.author.id) || messageOptions[1]
                 // Typescript goes crazy for some reason if I don't make this any
                 return message.reply(reply as any);
