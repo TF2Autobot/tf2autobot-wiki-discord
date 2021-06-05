@@ -1,26 +1,23 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'graceful-fs';
 
-
-export const defaultOptions  = {
-    prefix : ".",
-    roleID : ""
-}
-
+export const defaultOptions = {
+    prefix: '.',
+    roleID: ''
+};
 
 export default class Options {
-    
     public currentOptions;
 
-    private readonly folderPath : string = "./files";
+    private readonly folderPath: string = './files';
 
-    private readonly optionsPath : string = "./files/options.json";
+    private readonly optionsPath: string = './files/options.json';
 
-    public init() : void {
-        if(!existsSync(this.folderPath)) {
+    public init(): void {
+        if (!existsSync(this.folderPath)) {
             mkdirSync(this.folderPath);
         }
 
-        if(!existsSync(this.optionsPath)) {
+        if (!existsSync(this.optionsPath)) {
             writeFileSync(this.optionsPath, JSON.stringify(defaultOptions, null, 4), { encoding: 'utf8' });
             this.currentOptions = defaultOptions;
         } else {
@@ -28,7 +25,7 @@ export default class Options {
         }
     }
 
-    public handleOption(option: string, value : string) : void {
+    public handleOption(option: string, value: string): void {
         this.currentOptions[option] = value;
         writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, 4), { encoding: 'utf8' });
     }
@@ -37,5 +34,4 @@ export default class Options {
         delete this.currentOptions[command];
         writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, 4), { encoding: 'utf8' });
     }
-
 }
