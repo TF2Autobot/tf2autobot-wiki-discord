@@ -42,7 +42,7 @@ export default class Commands {
                     this.recentlySentReply = {}; // not sure why undefined here. should already defined 🤔
                 }
 
-                this.recentlySentReply[message.author.id] = (this.recentlySentReply[message.author.id] || -1) + 1;
+                this.recentlySentReply[message.author.id] = (this.recentlySentReply[message.author.id] ?? -1) + 1;
 
                 if (
                     this.recentlySentReply[message.author.id] !== undefined &&
@@ -77,7 +77,7 @@ export default class Commands {
                     this.recentlySentReply = {}; // not sure why undefined here. should already defined 🤔
                 }
 
-                this.recentlySentReply[message.author.id] = (this.recentlySentReply[message.author.id] || -1) + 1;
+                this.recentlySentReply[message.author.id] = (this.recentlySentReply[message.author.id] ?? -1) + 1;
 
                 if (
                     this.recentlySentReply[message.author.id] !== undefined &&
