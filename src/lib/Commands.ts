@@ -95,7 +95,7 @@ export default class Commands {
                 delete autoresponses.prefix;
                 delete autoresponses.roleID;
 
-                return message.reply(this.checkSpam(message.content, message.author.id) ||
+                return message.reply(this.checkSpam(command, message.author.id) ||
                     `Here's a list of available auto-response keywords:\n- ${Object.keys(autoresponses).join('\n- ')}`
                 );
             }
