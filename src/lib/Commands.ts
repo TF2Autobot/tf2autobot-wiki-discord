@@ -2,6 +2,21 @@ import { options } from '../app';
 import { Message } from 'discord.js';
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
+function commandParser(message: string): [string, string] {
+    // filter out empty spaces ie message is .test  2 => ['.test', '','2'] => ['.test', '2']
+    const splitMessage = message.split(' ').filter(i => i);
+    if (splitMessage[1].match(/^["']/)) {
+        // to make .test "test\" hehe" usable
+        const endIndex = splitMessage.findIndex(i => i.match(/[^\\]['"]$/)) + 1
+        if (!endIndex) throw "Missing ending quote."
+        const command = splitMessage.slice(1, endIndex).join(' ').replace(/\\(['"])/g, "$1")
+
+        return [command.substring(1, command.length - 1), splitMessage.slice(endIndex).join(' ')]
+    }
+
+    return [splitMessage[1], splitMessage.slice(2).join(' ')]
+}
+
 export default class Commands {
     private recentlySentReply: { [id: string]: number } = {};
 
@@ -21,7 +36,8 @@ export default class Commands {
     public async handleMessage(message: Message): Promise<Message> {
         //check for auto-response and if found dont continue
         if (channels.includes(message.channel.id)) {
-            if (options.currentOptions[message.content] != undefined) {
+            const messageOptions = options.getOption(message.content)
+            if (messageOptions) {
                 if (this.recentlySentReply === undefined) {
                     this.recentlySentReply = {}; // not sure why undefined here. should already defined 🤔
                 }
@@ -34,8 +50,8 @@ export default class Commands {
                 ) {
                     return message.reply(`Bruh stop spamming :prettypepepuke:`);
                 }
-
-                return message.reply(options.currentOptions[message.content]);
+                message.reply(messageOptions);
+                return;
             }
         }
 
@@ -51,7 +67,7 @@ export default class Commands {
         const command = args.shift().trim();
 
         const isOwner = message.guild.ownerID === message.author.id;
-        if (!message.member.roles.cache.some(r => r.id == roleID) && !isOwner) {
+        if (!message.member.roles.cache.find(r => r.id == roleID) && !isOwner) {
             if (command === 'list') {
                 const autoresponses = Object.assign({}, options.currentOptions);
                 delete autoresponses.prefix;
@@ -84,7 +100,6 @@ export default class Commands {
                 `Any commands should be run on ${channels.map(channel => `<#${channel}>`).join(', ')}`
             );
         }
-
         if (command === 'prefix') {
             //check for missing arguments cause people dumb
             if (args.length < 1) {
@@ -94,38 +109,51 @@ export default class Commands {
             options.handleOption(command, newPrefix);
             return message.reply(`Changed prefix from ${prefix} to ${newPrefix}`);
         } else if (command === 'add') {
-            if (args.length < 2) {
+            if (args.length < 2 && !message.attachments.first()) {
                 return message.reply(`Correct Usage: ${prefix}add command response.`);
             }
-            let command = args[0];
-            if (options.currentOptions[command] != undefined) {
-                return message.reply(`Auto-reply for ${'`' + command + '`'} already exists.`);
+            try {
+                const [devCommand, devResponse] = commandParser(message.content);
+                if (["prefix", "roleID"].includes(devCommand)) return message.reply(`Can not add base value ${devCommand} as a command.`)
+                if (options.currentOptions[devCommand] != undefined) {
+                    return message.reply(`Auto-reply for ${'`' + devCommand + '`'} already exists.`);
+                }
+                options.handleOption(devCommand, devResponse, message.attachments.array());
+                return message.channel.send(
+                    `Added auto-reply: ${'`' + devCommand + '`'}, ${devResponse ? ("with the response: \n> " + devResponse) : "with the attachment: \n>"}.`,
+                    { files: message.attachments.array() }
+                );
+            } catch (err) {
+                return message.reply(err)
             }
-            let response = args.slice(1).join(' ');
-            options.handleOption(command, response);
-            return message.channel.send(
-                `Added auto-reply: ${'`' + command + '`'}, with the response: \n> ${response}.`
-            );
         } else if (command === 'remove') {
             //check for missing arguments cause people dumb
             if (args.length < 1) {
                 return message.reply(`Correct Usage: ${prefix}remove command.`);
             }
-            let delCommand = args.shift();
+            let delCommand = args.filter(i => i).join(' ');
+            if (["prefix", "roleID"].includes(delCommand)) return message.reply(`Can not remove base value ${delCommand}.`)
             options.deleteCommand(delCommand);
             return message.reply(`Deleted auto-reply for ${'`' + delCommand + '`'}`);
         } else if (command === 'edit') {
             //check for missing arguments cause people dumb
-            if (args.length < 2) {
+            if (args.length < 2 && !message.attachments.first()) {
                 return message.reply(`Correct Usage: ${prefix}edit command newResponse.`);
             }
-            let command = args[0];
-            if (options.currentOptions[command] != undefined) {
-                let newResponse = args.slice(1).join(' ');
-                options.handleOption(command, newResponse);
-                return message.reply(`Modified response for ${'`' + command + '`'}.`);
+            try {
+                const [devCommand, devResponse] = commandParser(message.content);
+                if (["prefix", "roleID"].includes(devCommand)) return message.reply(`Can not add base value ${devCommand} as a command.`)
+                if (options.currentOptions[devCommand] != undefined) {
+                    options.handleOption(devCommand, devResponse, message.attachments.array());
+                    return message.channel.send(
+                        `Added auto-reply: ${'`' + devCommand + '`'}, ${devResponse ? ("with the response: \n> " + devResponse) : "with the attachment: \n>"}.`,
+                        { files: message.attachments.array() }
+                    );
+                }
+                return message.reply(`Auto-reply for ${'`' + devCommand + '`'} doesn't exist.`);
+            } catch (err) {
+                return message.reply(err)
             }
-            return message.reply(`Auto-reply for ${'`' + command + '`'} doesn't exist.`);
         } else if (command === 'setRole') {
             if (args.length < 1) {
                 return message.reply(`Correct Usage: ${prefix}setRole roleID.`);

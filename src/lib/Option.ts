@@ -1,3 +1,4 @@
+import { MessageAttachment, MessageOptions } from 'discord.js';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'graceful-fs';
 
 export const defaultOptions = {
@@ -25,13 +26,16 @@ export default class Options {
         }
     }
 
-    public handleOption(option: string, value: string): void {
-        this.currentOptions[option] = value;
-        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, 4), { encoding: 'utf8' });
+    public handleOption(option: string, content: string, files?: MessageAttachment[]): void {
+        this.currentOptions[option] = { content, files };
+        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, "\t"), { encoding: 'utf8' });
+    }
+    public getOption(option: string): MessageOptions {
+        return this.currentOptions[option] as MessageOptions;
     }
 
     public deleteCommand(command: string) {
         delete this.currentOptions[command];
-        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, 4), { encoding: 'utf8' });
+        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, "\t"), { encoding: 'utf8' });
     }
 }
