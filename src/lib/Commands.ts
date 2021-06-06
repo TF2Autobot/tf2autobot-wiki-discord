@@ -146,45 +146,50 @@ export default class Commands {
             //check for missing arguments cause people dumb
             if (args.length < 1) {
                 message.react('✋');
-                return message.reply(`Correct Usage: ${prefix}prefix newPrefix.`);
+                return message.reply(`**Correct Usage**: \`${prefix}prefix <newPrefix>\``);
             }
 
             const newPrefix = args.shift();
             options.handleBaseOptionOrAlias('prefix', newPrefix);
             message.react('✅');
-            return message.reply(`Changed prefix from ${prefix} to ${newPrefix}`);
+            return message.reply(`Changed prefix from \`${prefix}\` to \`${newPrefix}\``);
         } else if (command === 'setRole' && isOwner) {
             if (args.length < 1) {
                 message.react('✋');
-                return message.reply(`Correct Usage: ${prefix}setRole roleID.`);
+                return message.reply(`**Correct Usage**: \`${prefix}setRole <roleID>\``);
             }
 
             const newRole = args.shift();
             options.handleBaseOptionOrAlias('roleID', newRole);
             message.react('✅');
-            return message.reply(`Changed roleID to ${newRole}`);
+            return message.reply(`Changed roleID to \`${newRole}\``);
         } else if (command === 'add') {
             if (args.length < 2 && !message.attachments.first()) {
                 message.react('✋');
-                return message.reply(`Correct Usage: ${prefix}add command response.`);
+                return message.reply(
+                    `**Correct Usage**: \`${prefix}add <newKeyword> <response>\`` +
+                        `\n__Example__:\n- ${prefix}add pm2 Short for Process Manager 2` +
+                        `\n- ${prefix}add "manual review" You manually review and then manually accept/decline` +
+                        `\n\n📌Note📌\n\`<response>\` can either be descriptions together with an attachment, or just an attachment (i.e. image, file).`
+                );
             }
 
             try {
                 const [devCommand, devResponse] = commandParser(message.content);
                 if (['prefix', 'roleID'].includes(devCommand)) {
                     message.react('❌');
-                    return message.reply(`Can not add base value ${devCommand} as a command.`);
+                    return message.reply(`Can not add base value \`${devCommand}\` as a command.`);
                 }
 
                 if (options.getOption(devCommand)[1] != undefined) {
                     message.react('❌');
-                    return message.reply(`Auto-reply for ${'`' + devCommand + '`'} already exists.`);
+                    return message.reply(`Auto-reply for \`${devCommand}\` already exists.`);
                 }
 
                 options.handleOption(devCommand, devResponse, message.attachments.array());
                 message.react('✅');
                 return message.channel.send(
-                    `Added auto-reply: ${'`' + devCommand + '`'}, ${
+                    `Added auto-reply: \`${devCommand}\`, ${
                         devResponse
                             ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ')
                             : 'with the attachment:\n'
@@ -199,37 +204,42 @@ export default class Commands {
             //check for missing arguments cause people dumb
             if (args.length < 1) {
                 message.react('✋');
-                return message.reply(`Correct Usage: ${prefix}remove command.`);
+                return message.reply(`**Correct Usage**: \`${prefix}remove <existingKeyword>\``);
             }
 
             const delCommand = args.filter(i => i).join(' ');
             if (['prefix', 'roleID'].includes(delCommand)) {
-                return message.reply(`Can not remove base value ${delCommand}.`);
+                return message.reply(`Can not remove base value \`${delCommand}\``);
             }
 
             const isAlias = typeof options.getOption(delCommand, true)[1] === 'string' ? 'alias' : '';
             options.deleteCommand(delCommand);
             message.react('🚮');
-            return message.reply(`Deleted auto-reply for ${isAlias} ${'`' + delCommand + '`'}`);
+            return message.reply(`Deleted auto-reply for ${isAlias} \`${delCommand}\``);
         } else if (command === 'edit') {
             //check for missing arguments cause people dumb
             if (args.length < 2 && !message.attachments.first()) {
                 message.react('✋');
-                return message.reply(`Correct Usage: ${prefix}edit command newResponse.`);
+                return message.reply(
+                    `**Correct Usage**: \`${prefix}edit <existingKeyword> <newResponse>\`` +
+                        `\n__Example__:\n- ${prefix}edit pm2 Short for Process Manager 2` +
+                        `\n- ${prefix}edit "manual review" You manually review and then manually accept/decline` +
+                        `\n\n📌Note📌\n\`<newResponse>\` can either be descriptions together with an attachment, or just an attachment (i.e. image, file).`
+                );
             }
 
             try {
                 const [devCommand, devResponse] = commandParser(message.content);
                 if (['prefix', 'roleID'].includes(devCommand)) {
                     message.react('❌');
-                    return message.reply(`Can not add base value ${devCommand} as a command.`);
+                    return message.reply(`Can not add base value \`${devCommand}\` as a command.`);
                 }
 
                 if (options.getOption(devCommand)[1] != undefined) {
                     options.handleOption(devCommand, devResponse, message.attachments.array());
                     message.react('✅');
                     return message.channel.send(
-                        `Edited auto-reply: ${'`' + devCommand + '`'}, ${
+                        `Edited auto-reply: \`${devCommand}\`, ${
                             devResponse
                                 ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ')
                                 : 'with the attachment:\n'
@@ -239,7 +249,7 @@ export default class Commands {
                 }
 
                 message.react('❌');
-                return message.reply(`Auto-reply for ${'`' + devCommand + '`'} doesn't exist.`);
+                return message.reply(`Auto-reply for \`${devCommand}\` doesn't exist.`);
             } catch (err) {
                 message.react('❌');
                 return message.reply(err);
@@ -250,33 +260,38 @@ export default class Commands {
         } else if (command === 'alias') {
             if (args.length < 2) {
                 message.react('✋');
-                return message.reply(`Correct Usage: ${prefix}alias !help help.\nor: "not found" file not found`);
+                return message.reply(
+                    `**Correct Usage**: \`${prefix}alias <newAlias> <currentExistingKeyword>\`` +
+                        `\n__Example__:\n- ${prefix}alias !help help\n- "not found" file not found`
+                );
             }
             try {
                 const [devAlias, devExistingCMD] = commandParser(message.content);
                 if (['prefix', 'roleID'].includes(devAlias)) {
                     message.react('❌');
-                    return message.reply(`Can not alias base value ${devAlias} as a command.`);
+                    return message.reply(`Can not alias base value \`${devAlias}\` as a command.`);
                 }
 
                 if (['prefix', 'roleID'].includes(devExistingCMD)) {
                     message.react('❌');
-                    return message.reply(`Can not alias base value ${devExistingCMD} as a target.`);
+                    return message.reply(`Can not alias base value \`${devExistingCMD}\` as a target.`);
                 }
 
                 if (options.getOption(devExistingCMD)[1] === undefined) {
                     message.react('❌');
-                    return message.reply(`Can not target alias for ${'`' + devExistingCMD + '`'} it doesn't exist.`);
+                    return message.reply(`Can not target alias for \`${devExistingCMD}\` it doesn't exist.`);
                 }
 
                 if (options.getOption(devAlias)[1] !== undefined) {
                     message.react('❌');
-                    return message.reply(`Can not alias ${devAlias} as it already exists remove it first.`);
+                    return message.reply(`Can not alias \`${devAlias}\` as it already exists remove it first.`);
                 }
 
                 options.handleBaseOptionOrAlias(devAlias, options.getOption(devExistingCMD)[0]);
                 message.react('✅');
-                return message.channel.send(`Added alias ${devAlias} => ${options.getOption(devExistingCMD)[0]}`);
+                return message.channel.send(
+                    `Added alias \`${devAlias}\` => \`${options.getOption(devExistingCMD)[0]}\``
+                );
             } catch (err) {
                 message.react('❌');
                 return message.reply(err);
@@ -285,7 +300,9 @@ export default class Commands {
             if (args.length < 2) {
                 message.react('✋');
                 return message.reply(
-                    `Correct Usage: ${prefix}rename !help help.\nor: ${prefix}rename "not found" file not found`
+                    `**Correct Usage**: \`${prefix}rename <currentExistingKeyword> <newKeyword>\`` +
+                        `\n__Example__:\n- ${prefix}rename !help help` +
+                        `\n- ${prefix}rename "not found" file not found`
                 );
             }
 
@@ -293,25 +310,25 @@ export default class Commands {
                 const [devCurrent, devRename] = commandParser(message.content);
                 if (['prefix', 'roleID'].includes(devCurrent)) {
                     message.react('❌');
-                    return message.reply(`Can not rename base value ${'`' + devCurrent + '`'}.`);
+                    return message.reply(`Can not rename base value \`${devCurrent}\`.`);
                 }
                 if (['prefix', 'roleID'].includes(devRename)) {
                     message.react('❌');
-                    return message.reply(`Can not rename to base value ${'`' + devRename + '`'}.`);
+                    return message.reply(`Can not rename to base value \`${devRename}\`.`);
                 }
                 if (options.getOption(devCurrent)[1] === undefined) {
                     message.react('❌');
-                    return message.reply(`Can not rename ${'`' + devCurrent + '`'} it doesn't exist.`);
+                    return message.reply(`Can not rename \`${devCurrent}\` it doesn't exist.`);
                 }
                 if (options.getOption(devRename)[1] !== undefined) {
                     message.react('❌');
-                    return message.reply(`Can not rename to ${'`' + devRename + '`'} as it already exists.`);
+                    return message.reply(`Can not rename to \`${devRename}\` as it already exists.`);
                 }
 
                 options.renameCommand(devCurrent, devRename);
 
                 message.react('✅');
-                return message.channel.send(`Renamed ${'`' + devCurrent + '`'} => ${'`' + devRename + '`'}`);
+                return message.channel.send(`Renamed \`${devCurrent}\` => \`${devRename}\``);
             } catch (err) {
                 message.react('❌');
                 return message.reply(err);
