@@ -1,5 +1,6 @@
 import { MessageAttachment, MessageOptions } from 'discord.js';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'graceful-fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'fs';
+import path from 'path';
 
 export const defaultOptions = {
     prefix: '.',
@@ -9,9 +10,9 @@ export const defaultOptions = {
 export default class Options {
     public currentOptions;
 
-    private readonly folderPath: string = './files';
+    private readonly folderPath = path.join(__dirname, 'files');
 
-    private readonly optionsPath: string = './files/options.json';
+    private readonly optionsPath = path.join(__dirname, 'files', 'options.json');
 
     public init(): void {
         if (!existsSync(this.folderPath)) {
@@ -22,7 +23,7 @@ export default class Options {
             writeFileSync(this.optionsPath, JSON.stringify(defaultOptions, null, 4), { encoding: 'utf8' });
             this.currentOptions = defaultOptions;
         } else {
-            this.currentOptions = JSON.parse(readFileSync(this.optionsPath));
+            this.currentOptions = JSON.parse(readFileSync(this.optionsPath, { encoding: 'utf8' }));
         }
     }
     // Only for prefix and roleID
