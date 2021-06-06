@@ -214,8 +214,8 @@ export default class Commands {
                 if (options.getOption(devAlias)[1] !== undefined)
                     return message.reply(`Can not alias ${devAlias} as it already exists remove it first.`);
 
-                options.handleBaseOptionOrAlias(devAlias, devExistingCMD);
-                return message.channel.send(`Added alias ${devAlias} => ${devExistingCMD}`);
+                options.handleBaseOptionOrAlias(devAlias, options.getOption(devExistingCMD)[0]);
+                return message.channel.send(`Added alias ${devAlias} => ${options.getOption(devExistingCMD)[0]}`);
             } catch (err) {
                 return message.reply(err);
             }
