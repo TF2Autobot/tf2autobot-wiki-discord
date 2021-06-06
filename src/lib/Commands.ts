@@ -128,7 +128,7 @@ export default class Commands {
                 `Any commands should be run on ${channels.map(channel => `<#${channel}>`).join(', ')}`
             );
         }
-        if (command === 'prefix') {
+        if (command === 'prefix' && isOwner) {
             //check for missing arguments cause people dumb
             if (args.length < 1) {
                 return message.reply(`Correct Usage: ${prefix}prefix newPrefix.`);
@@ -136,6 +136,13 @@ export default class Commands {
             let newPrefix = args.shift();
             options.handleBaseOptionOrAlias('prefix', newPrefix);
             return message.reply(`Changed prefix from ${prefix} to ${newPrefix}`);
+        } else if (command === 'setRole' && isOwner) {
+            if (args.length < 1) {
+                return message.reply(`Correct Usage: ${prefix}setRole roleID.`);
+            }
+            let newRole = args.shift();
+            options.handleBaseOptionOrAlias('roleID', newRole);
+            return message.reply(`Changed roleID to ${newRole}`);
         } else if (command === 'add') {
             if (args.length < 2 && !message.attachments.first()) {
                 return message.reply(`Correct Usage: ${prefix}add command response.`);
@@ -190,13 +197,6 @@ export default class Commands {
             } catch (err) {
                 return message.reply(err);
             }
-        } else if (command === 'setRole') {
-            if (args.length < 1) {
-                return message.reply(`Correct Usage: ${prefix}setRole roleID.`);
-            }
-            let newRole = args.shift();
-            options.handleBaseOptionOrAlias('roleID', newRole);
-            return message.reply(`Changed roleID to ${newRole}`);
         } else if (command === 'list') {
             return message.reply(options.getList());
         } else if (command === 'alias') {
