@@ -36,7 +36,7 @@ export default class Options {
     }
     public getOption(option: string, canReturnAlias?: boolean) {
         // turn aliases to main so they'll still receive I have just sent a reply for that
-        option = Object.keys(this.currentOptions).find(i => i.toLowerCase() === option) || option;
+        option = Object.keys(this.currentOptions).find(i => i.toLowerCase() === option.toLowerCase()) || option;
         if (!canReturnAlias && typeof this.currentOptions[option] === 'string') option = this.currentOptions[option];
         return [option, this.currentOptions[option]] as [string, MessageOptions];
     }
