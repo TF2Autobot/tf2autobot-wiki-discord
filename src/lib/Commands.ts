@@ -185,8 +185,10 @@ export default class Commands {
                 message.react('✅');
                 return message.channel.send(
                     `Added auto-reply: ${'`' + devCommand + '`'}, ${
-                        devResponse ? 'with the response: \n> ' + devResponse : 'with the attachment: \n>'
-                    }.`,
+                        devResponse
+                            ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ')
+                            : 'with the attachment:\n'
+                    }`,
                     { files: message.attachments.array() }
                 );
             } catch (err) {
@@ -228,7 +230,9 @@ export default class Commands {
                     message.react('✅');
                     return message.channel.send(
                         `Edited auto-reply: ${'`' + devCommand + '`'}, ${
-                            devResponse ? 'with the response: \n> ' + devResponse : 'with the attachment: \n>'
+                            devResponse
+                                ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ')
+                                : 'with the attachment:\n'
                         }.`,
                         { files: message.attachments.array() }
                     );
