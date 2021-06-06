@@ -20,13 +20,20 @@ function commandParser(message: string): [string, string] {
     return [splitMessage[1], splitMessage.slice(2).join(' ')];
 }
 
-export default class Commands {
-    private recentlySent: { reply: { [id: string]: number }; command: { [cmd: string]: number } };
+interface RecentlySent {
+    reply: { [id: string]: number };
+    command: { [cmd: string]: number };
+}
 
-    private recentlySentTimeouts: {
-        reply: { [id: string]: NodeJS.Timeout };
-        command: { [cmd: string]: NodeJS.Timeout };
-    };
+interface RecentlySentTimeouts {
+    reply: { [id: string]: NodeJS.Timeout };
+    command: { [cmd: string]: NodeJS.Timeout };
+}
+
+export default class Commands {
+    private recentlySent: RecentlySent;
+
+    private recentlySentTimeouts: RecentlySentTimeouts;
 
     init(): void {
         this.recentlySent = { reply: {}, command: {} };
@@ -221,20 +228,22 @@ export default class Commands {
             }
         } else if (command === 'rename') {
             if (args.length < 2) {
-                return message.reply(`Correct Usage: ${prefix}rename !help help.\nor: ${prefix}rename "not found" file not found`);
+                return message.reply(
+                    `Correct Usage: ${prefix}rename !help help.\nor: ${prefix}rename "not found" file not found`
+                );
             }
             try {
                 const [devCurrent, devRename] = commandParser(message.content);
-                if (["prefix", "roleID"].includes(devCurrent))
-                    return message.reply(`Can not rename base value ${'`' + devCurrent + '`'}.`)
-                if (["prefix", "roleID"].includes(devRename))
-                    return message.reply(`Can not rename to base value ${'`' + devRename + '`'}.`)
+                if (['prefix', 'roleID'].includes(devCurrent))
+                    return message.reply(`Can not rename base value ${'`' + devCurrent + '`'}.`);
+                if (['prefix', 'roleID'].includes(devRename))
+                    return message.reply(`Can not rename to base value ${'`' + devRename + '`'}.`);
                 if (options.getOption(devCurrent)[1] === undefined)
                     return message.reply(`Can not rename ${'`' + devCurrent + '`'} it doesn't exist.`);
                 if (options.getOption(devRename)[1] !== undefined)
                     return message.reply(`Can not rename to ${'`' + devRename + '`'} as it already exists.`);
 
-                options.renameCommand(devCurrent, devRename)
+                options.renameCommand(devCurrent, devRename);
 
                 return message.channel.send(`Renamed ${'`' + devCurrent + '`'} => ${'`' + devRename + '`'}`);
             } catch (err) {

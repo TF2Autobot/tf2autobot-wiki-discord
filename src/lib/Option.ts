@@ -2,13 +2,27 @@ import { MessageAttachment, MessageOptions } from 'discord.js';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'fs';
 import path from 'path';
 
+interface DefaultOptions {
+    prefix: string;
+    roleID: string;
+}
+
+interface OptionsContent extends DefaultOptions {
+    [keyword: string]:
+        | {
+              content?: string;
+              files?: MessageAttachment[];
+          }
+        | string;
+}
+ 
 export const defaultOptions = {
     prefix: '.',
     roleID: ''
 };
 
 export default class Options {
-    public currentOptions;
+    public currentOptions: OptionsContent;
 
     private readonly folderPath = path.join(__dirname, 'files');
 
@@ -29,16 +43,16 @@ export default class Options {
     // Only for prefix and roleID
     public handleBaseOptionOrAlias(option: string, newParam: string) {
         this.currentOptions[option] = newParam;
-        this.saveOptionsFile()
+        this.saveOptionsFile();
     }
     public handleOption(option: string, content: string, files?: MessageAttachment[]): void {
         this.currentOptions[option] = { content, files };
-        this.saveOptionsFile()
+        this.saveOptionsFile();
     }
     public getOption(option: string, canReturnAlias?: boolean) {
         // turn aliases to main so they'll still receive I have just sent a reply for that
         option = Object.keys(this.currentOptions).find(i => i.toLowerCase() === option.toLowerCase()) || option;
-        if (!canReturnAlias && typeof this.currentOptions[option] === 'string') option = this.currentOptions[option];
+        if (!canReturnAlias && typeof this.currentOptions[option] === 'string') option = this.currentOptions[option] as string;
         return [option, this.currentOptions[option]] as [string, MessageOptions];
     }
 
@@ -50,10 +64,10 @@ export default class Options {
             [key: string]: string[];
         } = {};
         Object.keys(autoresponses).forEach(key => {
-            const param = typeof autoresponses[key] === 'string' ? autoresponses[key] : key;
+            const param = (typeof autoresponses[key] === 'string' ? autoresponses[key] : key) as string;
             cmds[param] ??= [];
             // if its the main command inserts it to the beginning else pushes it :)
-            cmds[param][key === param ? "unshift" : "push"](key)
+            cmds[param][key === param ? 'unshift' : 'push'](key);
         });
         return `Here's a list of available auto-response keywords:\n- ${Object.keys(cmds)
             .sort()
@@ -67,7 +81,7 @@ export default class Options {
             this.rePointAliases(command);
         }
         delete this.currentOptions[command];
-        this.saveOptionsFile()
+        this.saveOptionsFile();
     }
 
     public renameCommand(command: string, newCommand: string) {
