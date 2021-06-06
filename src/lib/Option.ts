@@ -71,6 +71,7 @@ export default class Options {
     public renameCommand(command: string, newCommand: string) {
         this.rePointAliases(command, newCommand);
         delete Object.assign(this.currentOptions, { [newCommand]: this.currentOptions[command] })[command];
+        this.saveOptionsFile();
     }
 
     public rePointAliases(command: string, newCommandOrDelete?: string | undefined) {
@@ -83,7 +84,6 @@ export default class Options {
                 }
             }
         });
-        if (!newCommandOrDelete) this.saveOptionsFile()
     }
 
     private saveOptionsFile() {
