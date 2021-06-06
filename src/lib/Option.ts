@@ -51,7 +51,8 @@ export default class Options {
         Object.keys(autoresponses).forEach(key => {
             const param = typeof autoresponses[key] === 'string' ? autoresponses[key] : key;
             cmds[param] ??= [];
-            cmds[param].push(key);
+            // if its the main command inserts it to the beginning else pushes it :)
+            cmds[param][key === param ? "unshift" : "push"](key)
         });
         return `Here's a list of available auto-response keywords:\n- ${Object.keys(cmds)
             .sort()
