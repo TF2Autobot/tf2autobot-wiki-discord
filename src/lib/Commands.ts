@@ -38,7 +38,7 @@ export default class Commands {
         }, 3000);
     }
 
-    private checkSpam(command: string, id: string): string {
+    private checkSpam(command: string, id: string): string | 'bruh' | null {
         clearTimeout(this.recentlySentTimeouts.reply[id]);
         clearTimeout(this.recentlySentTimeouts.command[command]);
         this.recentlySent.command[command] ??= 0;
@@ -49,6 +49,10 @@ export default class Commands {
             this.recentlySent.command[command] > 1
         ) {
             this.resetAfter3Seconds('command', command);
+            if (this.recentlySent.command[command] > 3) {
+                return 'bruh';
+            }
+
             return `I have just sent a reply for that ⛔`;
         }
 
@@ -60,11 +64,17 @@ export default class Commands {
             this.recentlySent.reply[id] > 2
         ) {
             this.resetAfter3Seconds('reply', id);
+            if (this.recentlySent.reply[id] > 3) {
+                return 'bruh';
+            }
+
             return `Bruh stop spamming ⛔`;
         }
 
         this.resetAfter3Seconds('reply', id);
         this.resetAfter3Seconds('command', command);
+
+        return null;
     }
 
     //message should be type of Message from discord but that way typescript throws error on line 8
@@ -73,7 +83,13 @@ export default class Commands {
         if (channels.includes(message.channel.id)) {
             const messageOptions = options.getOption(message.content)
             if (messageOptions[1]) {
-                const reply = this.checkSpam(messageOptions[0], message.author.id) || messageOptions[1]
+                const spam = this.checkSpam(messageOptions[0], message.author.id);
+                if (spam === 'bruh') {
+                    message.react('🤬');
+                    return;
+                }
+
+                const reply = spam || messageOptions[1]
                 // Typescript goes crazy for some reason if I don't make this any
                 return message.reply(reply as any);
             }
@@ -93,7 +109,13 @@ export default class Commands {
         const isOwner = message.guild.ownerID === message.author.id;
         if (!message.member.roles.cache.find(r => r.id == roleID) && !isOwner) {
             if (command === 'list') {
-                return message.reply(this.checkSpam(command, message.author.id) || options.getList());
+                const reply = this.checkSpam(command, message.author.id);
+                if (reply === 'bruh') {
+                    message.react('🤬');
+                    return;
+                }
+
+                return message.reply(reply || options.getList());
             }
 
             return;
