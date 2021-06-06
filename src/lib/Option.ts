@@ -28,11 +28,11 @@ export default class Options {
     // Only for prefix and roleID
     public handleBaseOptionOrAlias(option: string, newParam: string) {
         this.currentOptions[option] = newParam;
-        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, '\t'), { encoding: 'utf8' });
+        this.saveOptionsFile()
     }
     public handleOption(option: string, content: string, files?: MessageAttachment[]): void {
         this.currentOptions[option] = { content, files };
-        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, '\t'), { encoding: 'utf8' });
+        this.saveOptionsFile()
     }
     public getOption(option: string, canReturnAlias?: boolean) {
         // turn aliases to main so they'll still receive I have just sent a reply for that
@@ -65,7 +65,12 @@ export default class Options {
             this.rePointAliases(command);
         }
         delete this.currentOptions[command];
-        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, '\t'), { encoding: 'utf8' });
+        this.saveOptionsFile()
+    }
+
+    public renameCommand(command: string, newCommand: string) {
+        this.rePointAliases(command, newCommand);
+        delete Object.assign(this.currentOptions, { [newCommand]: this.currentOptions[command] })[command];
     }
 
     public rePointAliases(command: string, newCommandOrDelete?: string | undefined) {
@@ -78,5 +83,10 @@ export default class Options {
                 }
             }
         });
+        if (!newCommandOrDelete) this.saveOptionsFile()
+    }
+
+    private saveOptionsFile() {
+        writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, '\t'), { encoding: 'utf8' });
     }
 }

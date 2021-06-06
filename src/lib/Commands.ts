@@ -221,21 +221,22 @@ export default class Commands {
             }
         } else if (command === 'rename') {
             if (args.length < 2) {
-                return message.reply(`Correct Usage: ${prefix}rename !help help.\nor: "not found" file not found`);
+                return message.reply(`Correct Usage: ${prefix}rename !help help.\nor: ${prefix}rename "not found" file not found`);
             }
             try {
                 const [devCurrent, devRename] = commandParser(message.content);
-                if (['prefix', 'roleID'].includes(devCurrent))
-                    return message.reply(`Can not rename base value ${devCurrent}.`);
-                if (['prefix', 'roleID'].includes(devRename))
-                    return message.reply(`Can not rename to base value ${devRename}.`);
+                if (["prefix", "roleID"].includes(devCurrent))
+                    return message.reply(`Can not rename base value ${'`' + devCurrent + '`'}.`)
+                if (["prefix", "roleID"].includes(devRename))
+                    return message.reply(`Can not rename to base value ${'`' + devRename + '`'}.`)
                 if (options.getOption(devCurrent)[1] === undefined)
                     return message.reply(`Can not rename ${'`' + devCurrent + '`'} it doesn't exist.`);
                 if (options.getOption(devRename)[1] !== undefined)
-                    return message.reply(`Can not rename to ${'`' + devRename + '`'} it already exists.`);
+                    return message.reply(`Can not rename to ${'`' + devRename + '`'} as it already exists.`);
 
-                options.rePointAliases(devCurrent, devRename);
-                delete Object.assign(options, { [devRename]: options[devCurrent] })[devCurrent];
+                options.renameCommand(devCurrent, devRename)
+
+                return message.channel.send(`Renamed ${'`' + devCurrent + '`'} => ${'`' + devRename + '`'}`);
             } catch (err) {
                 return message.reply(err);
             }
