@@ -15,7 +15,7 @@ interface OptionsContent extends DefaultOptions {
           }
         | string;
 }
- 
+
 export const defaultOptions = {
     prefix: '.',
     roleID: ''
@@ -24,9 +24,9 @@ export const defaultOptions = {
 export default class Options {
     public currentOptions: OptionsContent;
 
-    private readonly folderPath = path.join(__dirname, 'files');
+    private readonly folderPath = path.join(__dirname, '..', '..', 'files');
 
-    private readonly optionsPath = path.join(__dirname, 'files', 'options.json');
+    private readonly optionsPath = path.join(__dirname, '..', '..', 'files', 'options.json');
 
     public init(): void {
         if (!existsSync(this.folderPath)) {
@@ -52,7 +52,8 @@ export default class Options {
     public getOption(option: string, canReturnAlias?: boolean) {
         // turn aliases to main so they'll still receive I have just sent a reply for that
         option = Object.keys(this.currentOptions).find(i => i.toLowerCase() === option.toLowerCase()) || option;
-        if (!canReturnAlias && typeof this.currentOptions[option] === 'string') option = this.currentOptions[option] as string;
+        if (!canReturnAlias && typeof this.currentOptions[option] === 'string')
+            option = this.currentOptions[option] as string;
         return [option, this.currentOptions[option]] as [string, MessageOptions];
     }
 
