@@ -39,7 +39,7 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
             `**Correct Usage**: \`${usageMessage} <${isAdd ? 'new' : 'currentExisting'}Keyword> <${
                 isEditMeme ? 'true|false' : 'response'
             }>\`` +
-                (['addMeme', 'editMeme'].includes(usageMessage)
+                (['addMeme', 'editMeme'].includes(command)
                     ? `\n__Example__:\n- ${usageMessage} pog :OrangePog:`
                     : `\n__Example__:\n- ${usageMessage} pm2 Short for Process Manager 2` +
                       `\n- ${usageMessage} "manual review" You manually review and then manually accept/decline` +
