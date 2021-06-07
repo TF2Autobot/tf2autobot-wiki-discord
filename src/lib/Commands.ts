@@ -39,8 +39,10 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
             `**Correct Usage**: \`${usageMessage} <${isAdd ? 'new' : 'currentExisting'}Keyword> <${
                 isEditMeme ? 'true|false' : 'response'
             }>\`` +
-                (['addMeme', 'editMeme'].includes(command)
+                (usageMessage === '.addMeme'
                     ? `\n__Example__:\n- ${usageMessage} pog :OrangePog:`
+                    : usageMessage === '.editMeme'
+                    ? `\n__Example__:\n- ${usageMessage} pog true`
                     : `\n__Example__:\n- ${usageMessage} pm2 Short for Process Manager 2` +
                       `\n- ${usageMessage} "manual review" You manually review and then manually accept/decline` +
                       `\n\n📌Note📌\n\`<response>\` can either be descriptions together with an attachment, or just an attachment (i.e. image, file).`)
