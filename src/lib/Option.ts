@@ -6,14 +6,13 @@ interface DefaultOptions {
     prefix: string;
     roleID: string;
 }
-
+interface Command {
+    content?: string;
+    files?: MessageAttachment[];
+    isMeme?: boolean;
+}
 interface OptionsContent extends DefaultOptions {
-    [keyword: string]:
-        | {
-              content?: string;
-              files?: MessageAttachment[];
-          }
-        | string;
+    [keyword: string]: Command | string;
 }
 
 export const defaultOptions = {
@@ -45,8 +44,12 @@ export default class Options {
         this.currentOptions[option] = newParam;
         this.saveOptionsFile();
     }
-    public handleOption(option: string, content: string, files?: MessageAttachment[]): void {
-        this.currentOptions[option] = { content, files };
+    public handleOption(option: string, content: string, files: MessageAttachment[], isMeme: boolean): void {
+        this.currentOptions[option] = { content, files, isMeme };
+        this.saveOptionsFile();
+    }
+    public handleOptionParam(option: string, param: keyof Command, value: any) {
+        this.currentOptions[option][param] = value;
         this.saveOptionsFile();
     }
     public getOption(option: string, canReturnAlias?: boolean) {
@@ -54,18 +57,25 @@ export default class Options {
         option = Object.keys(this.currentOptions).find(i => i.toLowerCase() === option.toLowerCase()) || option;
         if (!canReturnAlias && typeof this.currentOptions[option] === 'string')
             option = this.currentOptions[option] as string;
-        return [option, this.currentOptions[option]] as [string, MessageOptions];
+        return [option, this.currentOptions[option]] as [string, Command];
     }
 
-    public getList() {
+    public getList(memeList: boolean) {
         const autoresponses = Object.assign({}, this.currentOptions);
         delete autoresponses.prefix;
         delete autoresponses.roleID;
         const cmds: {
             [key: string]: string[];
         } = {};
+        const doNotAdd: string[] = [];
         Object.keys(autoresponses).forEach(key => {
             const param = (typeof autoresponses[key] === 'string' ? autoresponses[key] : key) as string;
+            if (key === param && ((autoresponses[key] as Command).isMeme || false) != memeList) {
+                delete cmds[param];
+                doNotAdd.push(param);
+                return;
+            }
+            if (doNotAdd.includes(param)) return;
             cmds[param] ??= [];
             // if its the main command inserts it to the beginning else pushes it :)
             cmds[param][key === param ? 'unshift' : 'push'](key);

@@ -3,7 +3,7 @@ import { Message, MessageReaction } from 'discord.js';
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
 function commandParser(message: string): [string, string] {
-    let cmd = "";
+    let cmd = '';
     // filter out empty spaces ie message is .test  2 => ['.test', '','2'] => ['.test', '2']
     const splitMessage = message.split(' ').filter(i => i);
     if (splitMessage[1].match(/^["']/)) {
@@ -27,7 +27,66 @@ function commandParser(message: string): [string, string] {
     [cmd, ...addToMessage] = cmd.split('\n');
     return [cmd, (addToMessage.join('\n') + ' ' + message).trimStart()];
 }
+function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string[], message: Message) {
+    const prefix = options.currentOptions.prefix;
+    const usageMessage = prefix + command + (isMeme ? 'Meme' : '');
+    const isAdd = command === 'add';
+    const isEditMeme = command === 'edit' && isMeme;
 
+    if (args.length < 2 && (isEditMeme || !message.attachments.first())) {
+        message.react('✋');
+        return message.reply(
+            `**Correct Usage**: \`${usageMessage} <${isAdd ? 'new' : 'currentExisting'}Keyword> <${
+                isEditMeme ? 'true|false' : 'response'
+            }>\`` +
+                (usageMessage === '.addMeme'
+                    ? `\n__Example__:\n- ${usageMessage} pog <a:OrangePog:791909949650370610>`
+                    : usageMessage === '.editMeme'
+                    ? `\n__Example__:\n- ${usageMessage} pog true`
+                    : `\n__Example__:\n- ${usageMessage} pm2 Short for Process Manager 2` +
+                      `\n- ${usageMessage} "manual review" You manually review and then manually accept/decline` +
+                      `\n\n📌Note📌\n\`<response>\` can either be descriptions together with an attachment, or just an attachment (i.e. image, file).`)
+        );
+    }
+
+    try {
+        const [devCommand, devResponse] = commandParser(message.content);
+        if (['prefix', 'roleID'].includes(devCommand)) {
+            throw `Can not \`${command}\` base value \`${devCommand}\` as a command.`;
+        }
+
+        if (isAdd === (options.getOption(devCommand)[1] != undefined)) {
+            throw `Auto-reply for \`${devCommand}\` ${isAdd ? 'already exists' : "doesn't exist"}.`;
+        }
+
+        if (isEditMeme) {
+            if (typeof options.getOption(devCommand, true)[1] === 'string')
+                throw `Can not edit isMeme parameter of \`${devCommand}\` as it is an alias.`;
+            const setMemeTo = devResponse === 'true' ? true : devResponse === 'false' ? false : null;
+            if (setMemeTo === null) {
+                throw (
+                    `Can not edit isMeme parameter of \`${devCommand}\` to \`${devResponse}\` ` +
+                    `as it should be only \`true\` or \`false\`.`
+                );
+            }
+            options.handleOptionParam(devCommand, 'isMeme', setMemeTo);
+            message.react('✅');
+            return message.channel.send(`Edited isMeme parameter of \`${devCommand}\` to \`${devResponse}\`.`);
+        }
+
+        options.handleOption(devCommand, devResponse, message.attachments.array(), isMeme);
+        message.react('✅');
+        return message.channel.send(
+            `${isAdd ? 'Add' : 'Edit'}ed auto-reply: \`${devCommand}\`, ${
+                devResponse ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ') : 'with the attachment:\n'
+            }`,
+            { files: message.attachments.array() }
+        );
+    } catch (err) {
+        message.react('❌');
+        return message.reply(err);
+    }
+}
 interface RecentlySent {
     reply: { [id: string]: number };
     command: { [cmd: string]: number };
@@ -96,6 +155,8 @@ export default class Commands {
 
     //message should be type of Message from discord but that way typescript throws error on line 8
     public async handleMessage(message: Message): Promise<Message | MessageReaction> {
+        if (message.author.bot) return;
+
         //check for auto-response and if found dont continue
         if (channels.includes(message.channel.id)) {
             const messageOptions = options.getOption(message.content);
@@ -109,14 +170,17 @@ export default class Commands {
                     message.react('👍');
                 }
 
-                return message.reply((spam || messageOptions[1]) as string);
+                if (spam || !messageOptions[1].isMeme) {
+                    return message.reply((spam || messageOptions[1]) as string);
+                }
+
+                return message.channel.send(messageOptions[1] as string);
             }
         }
-
         //dont continue if doesnt start with prefix or is an other bot
         const prefix = options.currentOptions.prefix;
         const roleID = options.currentOptions.roleID;
-        if (!message.content.startsWith(prefix) || message.author.bot) {
+        if (!message.content.startsWith(prefix)) {
             return;
         }
 
@@ -126,7 +190,7 @@ export default class Commands {
 
         const isOwner = message.guild.ownerID === message.author.id;
         if (!message.member.roles.cache.find(r => r.id == roleID) && !isOwner) {
-            if (command === 'list') {
+            if (command === 'list' || command === 'memeList') {
                 const checkSpam = this.checkSpam(command, message.author.id);
                 if (checkSpam === 'bruh') {
                     return message.react('🤬');
@@ -136,7 +200,7 @@ export default class Commands {
                     message.react('👍');
                 }
 
-                return message.reply(checkSpam || options.getList());
+                return message.reply(checkSpam || options.getList(command === 'memeList'));
             }
 
             return;
@@ -171,43 +235,8 @@ export default class Commands {
             options.handleBaseOptionOrAlias('roleID', newRole);
             message.react('✅');
             return message.reply(`Changed roleID to \`${newRole}\``);
-        } else if (command === 'add') {
-            if (args.length < 2 && !message.attachments.first()) {
-                message.react('✋');
-                return message.reply(
-                    `**Correct Usage**: \`${prefix}add <newKeyword> <response>\`` +
-                        `\n__Example__:\n- ${prefix}add pm2 Short for Process Manager 2` +
-                        `\n- ${prefix}add "manual review" You manually review and then manually accept/decline` +
-                        `\n\n📌Note📌\n\`<response>\` can either be descriptions together with an attachment, or just an attachment (i.e. image, file).`
-                );
-            }
-
-            try {
-                const [devCommand, devResponse] = commandParser(message.content);
-                if (['prefix', 'roleID'].includes(devCommand)) {
-                    message.react('❌');
-                    return message.reply(`Can not add base value \`${devCommand}\` as a command.`);
-                }
-
-                if (options.getOption(devCommand)[1] != undefined) {
-                    message.react('❌');
-                    return message.reply(`Auto-reply for \`${devCommand}\` already exists.`);
-                }
-
-                options.handleOption(devCommand, devResponse, message.attachments.array());
-                message.react('✅');
-                return message.channel.send(
-                    `Added auto-reply: \`${devCommand}\`, ${
-                        devResponse
-                            ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ')
-                            : 'with the attachment:\n'
-                    }`,
-                    { files: message.attachments.array() }
-                );
-            } catch (err) {
-                message.react('❌');
-                return message.reply(err);
-            }
+        } else if (['add', 'edit', 'addMeme', 'editMeme'].includes(command)) {
+            addOrEditCommand(command.replace('Meme', '') as 'add' | 'edit', command.includes('Meme'), args, message);
         } else if (command === 'remove') {
             //check for missing arguments cause people dumb
             if (args.length < 1) {
@@ -228,47 +257,9 @@ export default class Commands {
             options.deleteCommand(delCommand);
             message.react('🚮');
             return message.reply(`Deleted auto-reply for ${isAlias} \`${delCommand}\``);
-        } else if (command === 'edit') {
-            //check for missing arguments cause people dumb
-            if (args.length < 2 && !message.attachments.first()) {
-                message.react('✋');
-                return message.reply(
-                    `**Correct Usage**: \`${prefix}edit <existingKeyword> <newResponse>\`` +
-                        `\n__Example__:\n- ${prefix}edit pm2 Short for Process Manager 2` +
-                        `\n- ${prefix}edit "manual review" You manually review and then manually accept/decline` +
-                        `\n\n📌Note📌\n\`<newResponse>\` can either be descriptions together with an attachment, or just an attachment (i.e. image, file).`
-                );
-            }
-
-            try {
-                const [devCommand, devResponse] = commandParser(message.content);
-                if (['prefix', 'roleID'].includes(devCommand)) {
-                    message.react('❌');
-                    return message.reply(`Can not add base value \`${devCommand}\` as a command.`);
-                }
-
-                if (options.getOption(devCommand)[1] != undefined) {
-                    options.handleOption(devCommand, devResponse, message.attachments.array());
-                    message.react('✅');
-                    return message.channel.send(
-                        `Edited auto-reply: \`${devCommand}\`, ${
-                            devResponse
-                                ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ')
-                                : 'with the attachment:\n'
-                        }.`,
-                        { files: message.attachments.array() }
-                    );
-                }
-
-                message.react('❌');
-                return message.reply(`Auto-reply for \`${devCommand}\` doesn't exist.`);
-            } catch (err) {
-                message.react('❌');
-                return message.reply(err);
-            }
-        } else if (command === 'list') {
+        } else if (command === 'list' || command === 'memeList') {
             message.react('✅');
-            return message.reply(options.getList());
+            return message.reply(options.getList(command === 'memeList'));
         } else if (command === 'alias') {
             if (args.length < 2) {
                 message.react('✋');
