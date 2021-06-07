@@ -3,7 +3,7 @@ import { Message, MessageReaction } from 'discord.js';
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
 function commandParser(message: string): [string, string] {
-    let cmd = "";
+    let cmd = '';
     // filter out empty spaces ie message is .test  2 => ['.test', '','2'] => ['.test', '2']
     const splitMessage = message.split(' ').filter(i => i);
     if (splitMessage[1].match(/^["']/)) {
@@ -36,10 +36,12 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
     if (args.length < 2 && (isEditMeme || !message.attachments.first())) {
         message.react('✋');
         return message.reply(
-            `**Correct Usage**: \`${usageMessage} <${isAdd ? 'new' : ''}Keyword> <${isEditMeme ? "true|false" : "response"}>\`` +
-            `\n__Example__:\n- ${usageMessage} pm2 Short for Process Manager 2` +
-            `\n- ${usageMessage} "manual review" You manually review and then manually accept/decline` +
-            `\n\n📌Note📌\n\`<response>\` can either be descriptions together with an attachment, or just an attachment (i.e. image, file).`
+            `**Correct Usage**: \`${usageMessage} <${isAdd ? 'new' : ''}Keyword> <${
+                isEditMeme ? 'true|false' : 'response'
+            }>\`` +
+                `\n__Example__:\n- ${usageMessage} pm2 Short for Process Manager 2` +
+                `\n- ${usageMessage} "manual review" You manually review and then manually accept/decline` +
+                `\n\n📌Note📌\n\`<response>\` can either be descriptions together with an attachment, or just an attachment (i.e. image, file).`
         );
     }
 
@@ -50,27 +52,30 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
             return message.reply(`Can not \`${command}\` base value \`${devCommand}\` as a command.`);
         }
 
-        if ((isAdd === (options.getOption(devCommand)[1] != undefined))) {
+        if (isAdd === (options.getOption(devCommand)[1] != undefined)) {
             message.react('❌');
-            return message.reply(`Auto-reply for \`${devCommand}\` ${isAdd ? "already exists" : "doesn't exist"}.`);
+            return message.reply(`Auto-reply for \`${devCommand}\` ${isAdd ? 'already exists' : "doesn't exist"}.`);
         }
 
         if (isEditMeme) {
-            const setMemeTo = devResponse === "true" ? true : (devResponse === "false" ? false : null);
+            const setMemeTo = devResponse === 'true' ? true : devResponse === 'false' ? false : null;
             if (setMemeTo === null) {
                 message.react('❌');
-                return message.reply(`Can not edit isMeme parameter of \`${devCommand}\` to \`${devResponse}\` it should be \`true\` or \`false\`.`);
+                return message.reply(
+                    `Can not edit isMeme parameter of \`${devCommand}\` to \`${devResponse}\` ` +
+                        `as it should be only \`true\` or \`false\`.`
+                );
             }
-            options.handleOptionParam(devCommand, "isMeme", setMemeTo)
+            options.handleOptionParam(devCommand, 'isMeme', setMemeTo);
             message.react('✅');
-            return message.channel.send(`Edited isMeme parameter of \`${devCommand}\` to \`${devResponse}\`.`)
+            return message.channel.send(`Edited isMeme parameter of \`${devCommand}\` to \`${devResponse}\`.`);
         }
+
         options.handleOption(devCommand, devResponse, message.attachments.array(), isMeme);
         message.react('✅');
         return message.channel.send(
-            `${isAdd ? "Add" : "Edit"}ed auto-reply: \`${devCommand}\`, ${devResponse
-                ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ')
-                : 'with the attachment:\n'
+            `${isAdd ? 'Add' : 'Edit'}ed auto-reply: \`${devCommand}\`, ${
+                devResponse ? 'with the response:\n> ' + devResponse.replace('\n', '\n> ') : 'with the attachment:\n'
             }`,
             { files: message.attachments.array() }
         );
