@@ -63,7 +63,7 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
             }
             options.handleOptionParam(devCommand, "isMeme", setMemeTo)
             message.react('✅');
-            return message.channel.send(`Edited isMeme parameter of \`${command}\` to \`${devResponse}\`.`)
+            return message.channel.send(`Edited isMeme parameter of \`${devCommand}\` to \`${devResponse}\`.`)
         }
         options.handleOption(devCommand, devResponse, message.attachments.array(), isMeme);
         message.react('✅');
