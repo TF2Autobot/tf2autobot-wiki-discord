@@ -12,7 +12,7 @@ interface Command {
     isMeme?: boolean;
 }
 interface OptionsContent extends DefaultOptions {
-    [keyword: string]: Command | string
+    [keyword: string]: Command | string;
 }
 
 export const defaultOptions = {
@@ -57,7 +57,7 @@ export default class Options {
         option = Object.keys(this.currentOptions).find(i => i.toLowerCase() === option.toLowerCase()) || option;
         if (!canReturnAlias && typeof this.currentOptions[option] === 'string')
             option = this.currentOptions[option] as string;
-        return [option, this.currentOptions[option]] as [string, MessageOptions];
+        return [option, this.currentOptions[option]] as [string, Command];
     }
 
     public getList(memeList: boolean) {
@@ -67,7 +67,7 @@ export default class Options {
         const cmds: {
             [key: string]: string[];
         } = {};
-        const doNotAdd: string[] = []
+        const doNotAdd: string[] = [];
         Object.keys(autoresponses).forEach(key => {
             const param = (typeof autoresponses[key] === 'string' ? autoresponses[key] : key) as string;
             if (key === param && ((autoresponses[key] as Command).isMeme || false) != memeList) {

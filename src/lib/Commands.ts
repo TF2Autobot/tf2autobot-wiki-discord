@@ -167,8 +167,8 @@ export default class Commands {
                 if (spam === null) {
                     message.react('👍');
                 }
-
-                return message.reply((spam || messageOptions[1]) as string);
+                const replyOrReact = spam || !messageOptions[1].isMeme ? 'reply' : 'send';
+                return message[replyOrReact]((spam || messageOptions[1]) as string);
             }
         }
 
