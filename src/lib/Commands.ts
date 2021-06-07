@@ -3,6 +3,7 @@ import { Message, MessageReaction } from 'discord.js';
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
 function commandParser(message: string): [string, string] {
+    let cmd = "";
     // filter out empty spaces ie message is .test  2 => ['.test', '','2'] => ['.test', '2']
     const splitMessage = message.split(' ').filter(i => i);
     if (splitMessage[1].match(/^["']/)) {
@@ -14,10 +15,17 @@ function commandParser(message: string): [string, string] {
             .join(' ')
             .replace(/\\(['"])/g, '$1');
 
-        return [command.substring(1, command.length - 1), splitMessage.slice(endIndex).join(' ')];
+        cmd = command.substring(1, command.length - 1);
+        message = splitMessage.slice(endIndex).join(' ');
+    } else {
+        cmd = splitMessage[1];
+        message = splitMessage.slice(2).join(' ');
     }
+    let addToMessage: string[] = [];
 
-    return [splitMessage[1], splitMessage.slice(2).join(' ')];
+    // take out newline from command
+    [cmd, ...addToMessage] = cmd.split('\n');
+    return [cmd, (addToMessage.join('\n') + ' ' + message).trimStart()];
 }
 
 interface RecentlySent {
