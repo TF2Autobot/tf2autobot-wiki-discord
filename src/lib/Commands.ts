@@ -36,7 +36,7 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
     if (args.length < 2 && (isEditMeme || !message.attachments.first())) {
         message.react('✋');
         return message.reply(
-            `**Correct Usage**: \`${usageMessage} <${isAdd ? 'new' : ''}Keyword> <${
+            `**Correct Usage**: \`${usageMessage} <${isAdd ? 'new' : 'currentExisting'}Keyword> <${
                 isEditMeme ? 'true|false' : 'response'
             }>\`` +
                 `\n__Example__:\n- ${usageMessage} pm2 Short for Process Manager 2` +
