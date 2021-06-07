@@ -167,8 +167,11 @@ export default class Commands {
                 if (spam === null) {
                     message.react('👍');
                 }
-                const replyOrReact = spam || !messageOptions[1].isMeme ? 'reply' : 'send';
-                return message[replyOrReact]((spam || messageOptions[1]) as string);
+                if (spam || !messageOptions[1].isMeme) {
+                    message.reply((spam || messageOptions[1]) as string);
+                } else {
+                    message.channel.send(messageOptions[1] as string);
+                }
             }
         }
 
