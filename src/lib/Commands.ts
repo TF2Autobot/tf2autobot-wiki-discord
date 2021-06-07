@@ -52,22 +52,21 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
     try {
         const [devCommand, devResponse] = commandParser(message.content);
         if (['prefix', 'roleID'].includes(devCommand)) {
-            message.react('❌');
-            return message.reply(`Can not \`${command}\` base value \`${devCommand}\` as a command.`);
+            throw `Can not \`${command}\` base value \`${devCommand}\` as a command.`;
         }
 
         if (isAdd === (options.getOption(devCommand)[1] != undefined)) {
-            message.react('❌');
-            return message.reply(`Auto-reply for \`${devCommand}\` ${isAdd ? 'already exists' : "doesn't exist"}.`);
+            throw `Auto-reply for \`${devCommand}\` ${isAdd ? 'already exists' : "doesn't exist"}.`;
         }
 
         if (isEditMeme) {
+            if (typeof options.getOption(devCommand, true)[1] === 'string')
+                throw `Can not edit isMeme parameter of \`${devCommand}\` as it is an alias.`;
             const setMemeTo = devResponse === 'true' ? true : devResponse === 'false' ? false : null;
             if (setMemeTo === null) {
-                message.react('❌');
-                return message.reply(
+                throw (
                     `Can not edit isMeme parameter of \`${devCommand}\` to \`${devResponse}\` ` +
-                        `as it should be only \`true\` or \`false\`.`
+                    `as it should be only \`true\` or \`false\`.`
                 );
             }
             options.handleOptionParam(devCommand, 'isMeme', setMemeTo);
