@@ -219,8 +219,12 @@ export default class Commands {
             if (['prefix', 'roleID'].includes(delCommand)) {
                 return message.reply(`Can not remove base value \`${delCommand}\``);
             }
-
-            const isAlias = typeof options.getOption(delCommand, true)[1] === 'string' ? 'alias' : '';
+            const opt = options.getOption(delCommand, true)[1];
+            if (!opt) {
+                message.react('❌');
+                return message.reply(`Couldn't delete command \`${delCommand}\` as it doesn't exist.`);
+            }
+            const isAlias = typeof opt === 'string' ? 'alias' : '';
             options.deleteCommand(delCommand);
             message.react('🚮');
             return message.reply(`Deleted auto-reply for ${isAlias} \`${delCommand}\``);
