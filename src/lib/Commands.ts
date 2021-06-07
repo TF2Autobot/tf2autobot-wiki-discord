@@ -40,7 +40,7 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
                 isEditMeme ? 'true|false' : 'response'
             }>\`` +
                 (usageMessage === '.addMeme'
-                    ? `\n__Example__:\n- ${usageMessage} pog :OrangePog:`
+                    ? `\n__Example__:\n- ${usageMessage} pog <a:OrangePog:791909949650370610>`
                     : usageMessage === '.editMeme'
                     ? `\n__Example__:\n- ${usageMessage} pog true`
                     : `\n__Example__:\n- ${usageMessage} pm2 Short for Process Manager 2` +
