@@ -155,6 +155,13 @@ export default class Commands {
 
     //message should be type of Message from discord but that way typescript throws error on line 8
     public async handleMessage(message: Message): Promise<Message | MessageReaction> {
+        //dont continue if doesnt start with prefix or is an other bot
+        const prefix = options.currentOptions.prefix;
+        const roleID = options.currentOptions.roleID;
+        if (!message.content.startsWith(prefix) || message.author.bot) {
+            return;
+        }
+
         //check for auto-response and if found dont continue
         if (channels.includes(message.channel.id)) {
             const messageOptions = options.getOption(message.content);
@@ -174,13 +181,6 @@ export default class Commands {
 
                 return message.channel.send(messageOptions[1] as string);
             }
-        }
-
-        //dont continue if doesnt start with prefix or is an other bot
-        const prefix = options.currentOptions.prefix;
-        const roleID = options.currentOptions.roleID;
-        if (!message.content.startsWith(prefix) || message.author.bot) {
-            return;
         }
 
         //get arguments and command
