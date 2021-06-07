@@ -167,11 +167,12 @@ export default class Commands {
                 if (spam === null) {
                     message.react('👍');
                 }
+
                 if (spam || !messageOptions[1].isMeme) {
-                    message.reply((spam || messageOptions[1]) as string);
-                } else {
-                    message.channel.send(messageOptions[1] as string);
+                    return message.reply((spam || messageOptions[1]) as string);
                 }
+
+                return message.channel.send(messageOptions[1] as string);
             }
         }
 
