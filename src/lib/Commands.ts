@@ -59,7 +59,7 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
             const setMemeTo = devResponse === "true" ? true : (devResponse === "false" ? false : null);
             if (setMemeTo === null) {
                 message.react('❌');
-                return message.reply(`Can not edit isMeme parameter of \`${command}\` to \`${devResponse}\` it should be \`true\` or \`false\`.`);
+                return message.reply(`Can not edit isMeme parameter of \`${devCommand}\` to \`${devResponse}\` it should be \`true\` or \`false\`.`);
             }
             options.handleOptionParam(devCommand, "isMeme", setMemeTo)
             message.react('✅');
