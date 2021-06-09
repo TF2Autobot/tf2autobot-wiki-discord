@@ -158,25 +158,25 @@ export default class Commands {
         if (message.author.bot) return;
 
         //check for auto-response and if found dont continue
-        if (channels.includes(message.channel.id)) {
-            const messageOptions = options.getOption(message.content);
-            if (messageOptions[1]) {
-                const spam = this.checkSpam(messageOptions[0], message.author.id);
-                if (spam === 'bruh') {
-                    return message.react('🤬');
-                }
 
-                if (spam === null) {
-                    message.react('👍');
-                }
-
-                if (spam || !messageOptions[1].isMeme) {
-                    return message.reply((spam || messageOptions[1]) as string);
-                }
-
-                return message.channel.send(messageOptions[1] as string);
+        const messageOptions = options.getOption(message.content);
+        if (messageOptions[1] && (messageOptions[1].isMeme || channels.includes(message.channel.id))) {
+            const spam = this.checkSpam(messageOptions[0], message.author.id);
+            if (spam === 'bruh') {
+                return message.react('🤬');
             }
+
+            if (spam === null) {
+                message.react('👍');
+            }
+
+            if (spam || !messageOptions[1].isMeme) {
+                return message.reply((spam || messageOptions[1]) as string);
+            }
+
+            return message.channel.send(messageOptions[1] as string);
         }
+
         //dont continue if doesnt start with prefix or is an other bot
         const prefix = options.currentOptions.prefix;
         const roleID = options.currentOptions.roleID;
