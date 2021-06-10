@@ -25,6 +25,9 @@ function commandParser(message: string): [...ReturnType<typeof options['getOptio
 
     // take out newline from command
     [cmd, ...addToMessage] = cmd.split('\n');
+
+    // Convert mobile user tagging to desktop version: <@!userid> => <@userid>
+    cmd.replace(/<@!(\d+)>/g, '<@$1>');
     return [...options.getOption(cmd), (addToMessage.join('\n') + ' ' + message).trimStart()];
 }
 function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string[], message: Message) {
