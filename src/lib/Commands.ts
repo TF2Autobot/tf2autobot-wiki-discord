@@ -2,7 +2,7 @@ import { options } from '../app';
 import { Message, MessageReaction } from 'discord.js';
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
-function commandParser(message: string): [string, string] {
+function commandParser(message: string): [...ReturnType<typeof options['getOption']>, string] {
     let cmd = '';
     // filter out empty spaces ie message is .test  2 => ['.test', '','2'] => ['.test', '2']
     const splitMessage = message.split(' ').filter(i => i);
@@ -25,7 +25,7 @@ function commandParser(message: string): [string, string] {
 
     // take out newline from command
     [cmd, ...addToMessage] = cmd.split('\n');
-    return [cmd, (addToMessage.join('\n') + ' ' + message).trimStart()];
+    return [...options.getOption(cmd), (addToMessage.join('\n') + ' ' + message).trimStart()];
 }
 function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string[], message: Message) {
     const prefix = options.currentOptions.prefix;
@@ -50,12 +50,12 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
     }
 
     try {
-        const [devCommand, devResponse] = commandParser(message.content);
+        const [devCommand, devObject, devResponse] = commandParser(message.content);
         if (['prefix', 'roleID'].includes(devCommand)) {
             throw `Can not \`${command}\` base value \`${devCommand}\` as a command.`;
         }
 
-        if (isAdd === (options.getOption(devCommand)[1] != undefined)) {
+        if (isAdd === (devObject != undefined)) {
             throw `Auto-reply for \`${devCommand}\` ${isAdd ? 'already exists' : "doesn't exist"}.`;
         }
 
@@ -245,15 +245,16 @@ export default class Commands {
             }
 
             const delCommand = args.filter(i => i).join(' ');
-            if (['prefix', 'roleID'].includes(delCommand)) {
+            const opt = options.getOption(delCommand, true);
+            if (['prefix', 'roleID'].includes(opt[0])) {
                 return message.reply(`Can not remove base value \`${delCommand}\``);
             }
-            const opt = options.getOption(delCommand, true)[1];
-            if (!opt) {
+
+            if (!opt[1]) {
                 message.react('❌');
                 return message.reply(`Couldn't delete command \`${delCommand}\` as it doesn't exist.`);
             }
-            const isAlias = typeof opt === 'string' ? 'alias' : '';
+            const isAlias = typeof opt[1] === 'string' ? 'alias' : '';
             options.deleteCommand(delCommand);
             message.react('🚮');
             return message.reply(`Deleted auto-reply for ${isAlias} \`${delCommand}\``);
@@ -269,32 +270,32 @@ export default class Commands {
                 );
             }
             try {
-                const [devAlias, devExistingCMD] = commandParser(message.content);
+                const [devAlias, devObject, devExistingCMD] = commandParser(message.content);
+                const existingCMD = options.getOption(devExistingCMD);
+
                 if (['prefix', 'roleID'].includes(devAlias)) {
                     message.react('❌');
                     return message.reply(`Can not alias base value \`${devAlias}\` as a command.`);
                 }
 
-                if (['prefix', 'roleID'].includes(devExistingCMD)) {
+                if (['prefix', 'roleID'].includes(existingCMD[0])) {
                     message.react('❌');
                     return message.reply(`Can not alias base value \`${devExistingCMD}\` as a target.`);
                 }
 
-                if (options.getOption(devExistingCMD)[1] === undefined) {
+                if (existingCMD[1] === undefined) {
                     message.react('❌');
                     return message.reply(`Can not target alias for \`${devExistingCMD}\` it doesn't exist.`);
                 }
 
-                if (options.getOption(devAlias)[1] !== undefined) {
+                if (devObject !== undefined) {
                     message.react('❌');
                     return message.reply(`Can not alias \`${devAlias}\` as it already exists remove it first.`);
                 }
 
-                options.handleBaseOptionOrAlias(devAlias, options.getOption(devExistingCMD)[0]);
+                options.handleBaseOptionOrAlias(devAlias, existingCMD[0]);
                 message.react('✅');
-                return message.channel.send(
-                    `Added alias \`${devAlias}\` => \`${options.getOption(devExistingCMD)[0]}\``
-                );
+                return message.channel.send(`Added alias \`${devAlias}\` => \`${existingCMD[0]}\``);
             } catch (err) {
                 message.react('❌');
                 return message.reply(err);
@@ -310,20 +311,23 @@ export default class Commands {
             }
 
             try {
-                const [devCurrent, devRename] = commandParser(message.content);
+                const [devCurrent, devObject, devRename] = commandParser(message.content);
+                const renameCMD = options.getOption(devRename);
+
                 if (['prefix', 'roleID'].includes(devCurrent)) {
                     message.react('❌');
                     return message.reply(`Can not rename base value \`${devCurrent}\`.`);
                 }
-                if (['prefix', 'roleID'].includes(devRename)) {
+                if (['prefix', 'roleID'].includes(renameCMD[0])) {
                     message.react('❌');
                     return message.reply(`Can not rename to base value \`${devRename}\`.`);
                 }
-                if (options.getOption(devCurrent)[1] === undefined) {
+
+                if (devObject === undefined) {
                     message.react('❌');
                     return message.reply(`Can not rename \`${devCurrent}\` it doesn't exist.`);
                 }
-                if (options.getOption(devRename)[1] !== undefined) {
+                if (renameCMD[1] !== undefined) {
                     message.react('❌');
                     return message.reply(`Can not rename to \`${devRename}\` as it already exists.`);
                 }
