@@ -77,7 +77,12 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
             return message.channel.send(`Edited isMeme parameter of \`${devCommand}\` to \`${devResponse}\`.`);
         }
 
-        options.handleOption(devCommand, devResponse, message.attachments.array(), isMeme);
+        options.handleOption(
+            devCommand,
+            devResponse,
+            message.attachments.array(),
+            isAdd && !isEditMeme ? isMeme : devObject.isMeme
+        );
         message.react('✅');
         return message.channel.send(
             `${isAdd ? 'Add' : 'Edit'}ed auto-reply: \`${devCommand}\`, ${
