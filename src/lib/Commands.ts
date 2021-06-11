@@ -255,7 +255,7 @@ export default class Commands {
             const delCommand = args.filter(i => i).join(' ');
             const opt = options.getOption(delCommand, true);
             if (['prefix', 'roleID'].includes(opt[0])) {
-                return message.reply(`Can not remove base value \`${delCommand}\``);
+                return message.reply(`Can not remove base value \`${opt[0]}\``);
             }
 
             if (!opt[1]) {
@@ -263,9 +263,9 @@ export default class Commands {
                 return message.reply(`Couldn't delete command \`${delCommand}\` as it doesn't exist.`);
             }
             const isAlias = typeof opt[1] === 'string' ? 'alias' : '';
-            options.deleteCommand(delCommand);
+            options.deleteCommand(opt[0]);
             message.react('🚮');
-            return message.reply(`Deleted auto-reply for ${isAlias} \`${delCommand}\``);
+            return message.reply(`Deleted auto-reply for ${isAlias} \`${opt[0]}\``);
         } else if (command === 'list' || command === 'memeList') {
             message.react('✅');
             return message.reply(options.getList(command === 'memeList'));
