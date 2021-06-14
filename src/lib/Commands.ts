@@ -218,11 +218,11 @@ export default class Commands {
         if (
             ![
                 'prefix',
-                'setRole',
+                'setrole',
                 'add',
                 'edit',
-                'addMeme',
-                'editMeme',
+                'addmeme',
+                'editmeme',
                 'remove',
                 'list',
                 'memeList',
@@ -252,7 +252,7 @@ export default class Commands {
             options.handleBaseOptionOrAlias('prefix', newPrefix);
             message.react('✅');
             return message.reply(`Changed prefix from \`${prefix}\` to \`${newPrefix}\``);
-        } else if (command === 'setRole' && isOwner) {
+        } else if (command === 'setrole' && isOwner) {
             if (args.length < 1) {
                 message.react('✋');
                 return message.reply(`**Correct Usage**: \`${prefix}setRole <roleID>\``);
@@ -262,7 +262,7 @@ export default class Commands {
             options.handleBaseOptionOrAlias('roleID', newRole);
             message.react('✅');
             return message.reply(`Changed roleID to \`${newRole}\``);
-        } else if (['add', 'edit', 'addMeme', 'editMeme'].includes(command)) {
+        } else if (['add', 'edit', 'addmeme', 'editmeme'].includes(command)) {
             addOrEditCommand(command.replace('Meme', '') as 'add' | 'edit', command.includes('Meme'), args, message);
         } else if (command === 'remove') {
             //check for missing arguments cause people dumb
