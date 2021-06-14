@@ -161,7 +161,6 @@ export default class Commands {
         return null;
     }
 
-    //message should be type of Message from discord but that way typescript throws error on line 8
     public async handleMessage(message: Message): Promise<Message | MessageReaction> {
         if (message.author.bot) return;
 
@@ -214,7 +213,25 @@ export default class Commands {
             return;
         }
 
-        //check if its on correct channel
+        if (
+            ![
+                'prefix',
+                'setRole',
+                'add',
+                'edit',
+                'addMeme',
+                'editMeme',
+                'remove',
+                'list',
+                'memeList',
+                'alias',
+                'rename'
+            ].includes(command)
+        ) {
+            return;
+        }
+
+        // check if its on correct channel
         if (!channels.includes(message.channel.id) && channels.length != 0) {
             message.react('❌');
             return message.reply(
