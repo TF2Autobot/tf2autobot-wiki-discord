@@ -1,5 +1,7 @@
 import { options } from '../app';
 import { Message, MessageReaction } from 'discord.js';
+import getEmoji from 'get-random-emoji';
+
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
 function commandParser(message: string): [...ReturnType<typeof options['getOption']>, string] {
@@ -228,7 +230,7 @@ export default class Commands {
                 'rename'
             ].includes(command)
         ) {
-            return;
+            return message.react(getEmoji());
         }
 
         // check if its on correct channel
