@@ -198,7 +198,14 @@ export default class Commands {
         const command = args.shift().trim().toLowerCase();
 
         const isOwner = message.guild.ownerID === message.author.id;
-        if (!message.member.roles.cache.find(r => r.id == roleID) && !isOwner) {
+        const isNotManager = !message.member.roles.cache.find(r => r.id == roleID) && !isOwner;
+        const isNotDesignatedChannels = !channels.includes(message.channel.id) && channels.length != 0;
+
+        if (isNotManager) {
+            if (command === 'list' && isNotDesignatedChannels) {
+                return;
+            }
+
             if (command === 'list' || command === 'memelist') {
                 const checkSpam = this.checkSpam(command, message.author.id);
                 if (checkSpam === 'bruh') {
@@ -225,7 +232,6 @@ export default class Commands {
                 'editmeme',
                 'remove',
                 'list',
-                'memelist',
                 'alias',
                 'rename'
             ].includes(command)
@@ -233,8 +239,13 @@ export default class Commands {
             return message.react(getEmoji());
         }
 
+        if (command === 'memelist') {
+            message.react('✅');
+            return message.reply(options.getList(true));
+        }
+
         // check if its on correct channel
-        if (!channels.includes(message.channel.id) && channels.length != 0) {
+        if (isNotDesignatedChannels) {
             message.react('❌');
             return message.reply(
                 `Any commands should be run on ${channels.map(channel => `<#${channel}>`).join(', ')}`
@@ -285,9 +296,9 @@ export default class Commands {
             options.deleteCommand(opt[0]);
             message.react('🚮');
             return message.reply(`Deleted auto-reply for ${isAlias} \`${opt[0]}\``);
-        } else if (command === 'list' || command === 'memelist') {
+        } else if (command === 'list') {
             message.react('✅');
-            return message.reply(options.getList(command === 'memelist'));
+            return message.reply(options.getList(false));
         } else if (command === 'alias') {
             if (args.length < 2) {
                 message.react('✋');
