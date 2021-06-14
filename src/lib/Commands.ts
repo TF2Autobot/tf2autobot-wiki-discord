@@ -263,7 +263,7 @@ export default class Commands {
             message.react('✅');
             return message.reply(`Changed roleID to \`${newRole}\``);
         } else if (['add', 'edit', 'addmeme', 'editmeme'].includes(command)) {
-            addOrEditCommand(command.replace('Meme', '') as 'add' | 'edit', command.includes('Meme'), args, message);
+            addOrEditCommand(command.replace('meme', '') as 'add' | 'edit', command.includes('meme'), args, message);
         } else if (command === 'remove') {
             //check for missing arguments cause people dumb
             if (args.length < 1) {
