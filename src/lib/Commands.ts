@@ -195,11 +195,11 @@ export default class Commands {
 
         //get arguments and command
         const args = message.content.slice(prefix.length).trim().split(/ +/);
-        const command = args.shift().trim();
+        const command = args.shift().trim().toLowerCase();
 
         const isOwner = message.guild.ownerID === message.author.id;
         if (!message.member.roles.cache.find(r => r.id == roleID) && !isOwner) {
-            if (command === 'list' || command === 'memeList') {
+            if (command === 'list' || command === 'memelist') {
                 const checkSpam = this.checkSpam(command, message.author.id);
                 if (checkSpam === 'bruh') {
                     return message.react('🤬');
@@ -209,7 +209,7 @@ export default class Commands {
                     message.react('👍');
                 }
 
-                return message.reply(checkSpam || options.getList(command === 'memeList'));
+                return message.reply(checkSpam || options.getList(command === 'memelist'));
             }
 
             return;
@@ -285,9 +285,9 @@ export default class Commands {
             options.deleteCommand(opt[0]);
             message.react('🚮');
             return message.reply(`Deleted auto-reply for ${isAlias} \`${opt[0]}\``);
-        } else if (command === 'list' || command === 'memeList') {
+        } else if (command === 'list' || command === 'memelist') {
             message.react('✅');
-            return message.reply(options.getList(command === 'memeList'));
+            return message.reply(options.getList(command === 'memelist'));
         } else if (command === 'alias') {
             if (args.length < 2) {
                 message.react('✋');
