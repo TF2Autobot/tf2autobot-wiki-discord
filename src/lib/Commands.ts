@@ -201,47 +201,32 @@ export default class Commands {
         const isNotManager = !message.member.roles.cache.find(r => r.id == roleID) && !isOwner;
         const isNotDesignatedChannels = !channels.includes(message.channel.id) && channels.length != 0;
 
-        if (isNotManager) {
-            if (command === 'list' && isNotDesignatedChannels) {
-                return;
-            }
-
-            if (command === 'list' || command === 'memelist') {
-                const checkSpam = this.checkSpam(command, message.author.id);
-                if (checkSpam === 'bruh') {
-                    return message.react('🤬');
-                }
-
-                if (checkSpam === null) {
-                    message.react('👍');
-                }
-
-                return message.reply(checkSpam || options.getList(command === 'memelist'));
-            }
-
+        if (command === 'list' && isNotDesignatedChannels) {
             return;
         }
 
-        if (
-            ![
-                'prefix',
-                'setrole',
-                'add',
-                'edit',
-                'addmeme',
-                'editmeme',
-                'remove',
-                'list',
-                'alias',
-                'rename'
-            ].includes(command)
-        ) {
-            return message.react(getEmoji());
+        if (command === 'list' || command === 'memelist') {
+            const checkSpam = this.checkSpam(command, message.author.id);
+            if (checkSpam === 'bruh') {
+                return message.react('🤬');
+            }
+
+            if (checkSpam === null) {
+                message.react('👍');
+            }
+
+            return message.reply(checkSpam || options.getList(command === 'memelist'));
         }
 
-        if (command === 'memelist') {
-            message.react('✅');
-            return message.reply(options.getList(true));
+        // don't continue if the user isn't an admin.
+        if (isNotManager) return;
+
+        if (
+            !['prefix', 'setrole', 'add', 'edit', 'addmeme', 'editmeme', 'remove', 'list', 'alias', 'rename'].includes(
+                command
+            )
+        ) {
+            return message.react(getEmoji());
         }
 
         // check if its on correct channel
@@ -296,9 +281,6 @@ export default class Commands {
             options.deleteCommand(opt[0]);
             message.react('🚮');
             return message.reply(`Deleted auto-reply for ${isAlias} \`${opt[0]}\``);
-        } else if (command === 'list') {
-            message.react('✅');
-            return message.reply(options.getList(false));
         } else if (command === 'alias') {
             if (args.length < 2) {
                 message.react('✋');
