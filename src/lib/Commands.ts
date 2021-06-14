@@ -225,7 +225,7 @@ export default class Commands {
                 'editmeme',
                 'remove',
                 'list',
-                'memeList',
+                'memelist',
                 'alias',
                 'rename'
             ].includes(command)
