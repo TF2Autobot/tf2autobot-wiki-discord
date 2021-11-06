@@ -23,9 +23,14 @@ export const defaultOptions = {
 export default class Options {
     public currentOptions: OptionsContent;
 
+    public currentOcr: {
+        [keyword: string]: string;
+    } = {};
     private readonly folderPath = path.join(__dirname, '..', '..', 'files');
 
     private readonly optionsPath = path.join(__dirname, '..', '..', 'files', 'options.json');
+
+    private readonly ocrPath = path.join(__dirname, '..', '..', 'files', 'ocr.json');
 
     public init(): void {
         if (!existsSync(this.folderPath)) {
@@ -38,6 +43,8 @@ export default class Options {
         } else {
             this.currentOptions = JSON.parse(readFileSync(this.optionsPath, { encoding: 'utf8' }));
         }
+
+        if (existsSync(this.ocrPath)) this.currentOcr = JSON.parse(readFileSync(this.ocrPath, { encoding: 'utf8' }));
     }
     // Only for prefix and roleID
     public handleBaseOptionOrAlias(option: string, newParam: string) {
@@ -60,27 +67,30 @@ export default class Options {
         return [option, this.currentOptions[option]] as [string, Command];
     }
 
-    public getList(memeList: boolean) {
-        const autoresponses = Object.assign({}, this.currentOptions);
+    public getList(type: 'list' | 'memelist' | 'ocr') {
+        const autoresponses = Object.assign({}, type !== 'ocr' ? this.currentOptions : this.currentOcr);
         delete autoresponses.prefix;
         delete autoresponses.roleID;
+
         const cmds: {
             [key: string]: string[];
         } = {};
         const doNotAdd: string[] = [];
         Object.keys(autoresponses).forEach(key => {
             const param = (typeof autoresponses[key] === 'string' ? autoresponses[key] : key) as string;
-            if (key === param && ((autoresponses[key] as Command).isMeme || false) != memeList) {
+            if (doNotAdd.includes(param)) return;
+            if (key === param && ((autoresponses[key] as Command).isMeme || false) != (type == 'memelist')) {
                 delete cmds[param];
                 doNotAdd.push(param);
                 return;
             }
-            if (doNotAdd.includes(param)) return;
-            cmds[param] ??= [];
+            cmds[param] ??= type === 'ocr' ? [param] : [];
             // if its the main command inserts it to the beginning else pushes it :)
             cmds[param][key === param ? 'unshift' : 'push'](key);
         });
-        return `Here's a list of available auto-response keywords:\n- ${Object.keys(cmds)
+        return `Here's a list of available ${
+            type == 'ocr' ? 'auto - response texts' : 'auto - response keywords'
+        }:\n- ${Object.keys(cmds)
             .sort()
             .map(key => cmds[key].join(' | '))
             .join('\n- ')}`;
@@ -99,21 +109,46 @@ export default class Options {
         this.rePointAliases(command, newCommand);
         delete Object.assign(this.currentOptions, { [newCommand]: this.currentOptions[command] })[command];
         this.saveOptionsFile();
+        this.saveOcrFile();
     }
 
     public rePointAliases(command: string, newCommandOrDelete?: string | undefined) {
-        Object.keys(this.currentOptions).forEach(key => {
-            if (this.currentOptions[key] === command) {
-                if (newCommandOrDelete === undefined) {
-                    delete this.currentOptions[key];
-                } else {
-                    this.currentOptions[key] = newCommandOrDelete;
+        [Object.keys(this.currentOcr), Object.keys(this.currentOptions)].forEach((keys, index) => {
+            const currentType = index ? this.currentOptions : this.currentOcr;
+            keys.forEach(key => {
+                if (currentType[key] === command) {
+                    if (newCommandOrDelete === undefined) {
+                        delete currentType[key];
+                    } else {
+                        currentType[key] = newCommandOrDelete;
+                    }
                 }
-            }
+            });
         });
     }
 
     private saveOptionsFile() {
         writeFileSync(this.optionsPath, JSON.stringify(this.currentOptions, null, '\t'), { encoding: 'utf8' });
+    }
+
+    private saveOcrFile() {
+        writeFileSync(this.ocrPath, JSON.stringify(this.currentOcr, null, '\t'), { encoding: 'utf8' });
+    }
+
+    public addOcr(text: string, targetOption: string) {
+        this.currentOcr[text.toLowerCase()] = targetOption;
+        this.saveOcrFile();
+    }
+
+    public deleteOcr(text: string) {
+        delete this.currentOcr[text];
+        this.saveOcrFile();
+    }
+
+    public getOcrResponse(text: string) {
+        text = text.toLowerCase();
+        for (const ocr of Object.keys(this.currentOcr)) {
+            if (text.includes(ocr)) return this.currentOptions[this.currentOcr[ocr]] as Command;
+        }
     }
 }

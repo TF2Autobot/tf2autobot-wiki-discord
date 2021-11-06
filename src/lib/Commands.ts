@@ -1,6 +1,7 @@
 import { options } from '../app';
 import { Message, MessageReaction } from 'discord.js';
 import getEmoji from 'get-random-emoji';
+import tesseract from 'node-tesseract-ocr';
 
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
@@ -184,6 +185,35 @@ export default class Commands {
             }
 
             return message.channel.send(messageOptions[1] as string);
+        } else if (
+            message.content.length === 0 &&
+            message.attachments.first() &&
+            channels.includes(message.channel.id)
+        ) {
+            //kannasearch
+            message
+                .react('<a:kannaSearch:853189008401629215>')
+                .catch(_err =>
+                    console.warn(
+                        "Couldn't react with kannaSearch maybe we're on a different server or kanna is gone :'("
+                    )
+                );
+            try {
+                const txt = await tesseract.recognize(message.attachments.first().url, {
+                    lang: 'eng'
+                });
+                const response = options.getOcrResponse(txt);
+                if (response) {
+                    response.content = (
+                        response.content +
+                        "\n\nFrom the image you've provided I've tried to figure out your issue and respond accordingly.\n" +
+                        "If the solution doesn't fixes your problem ask for a human to help you out :)."
+                    ).trim();
+                    message.reply(response);
+                }
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         //dont continue if doesnt start with prefix or is an other bot
@@ -215,16 +245,28 @@ export default class Commands {
                 message.react('👍');
             }
 
-            return message.reply(checkSpam || options.getList(command === 'memelist'));
+            return message.reply(checkSpam || options.getList(command));
         }
 
         // don't continue if the user isn't an admin.
         if (isNotManager) return;
 
         if (
-            !['prefix', 'setrole', 'add', 'edit', 'addmeme', 'editmeme', 'remove', 'list', 'alias', 'rename'].includes(
-                command
-            )
+            ![
+                'prefix',
+                'setrole',
+                'add',
+                'edit',
+                'addmeme',
+                'editmeme',
+                'remove',
+                'list',
+                'alias',
+                'rename',
+                'addocr',
+                'removeocr',
+                'ocrlist'
+            ].includes(command)
         ) {
             return message.react(getEmoji());
         }
@@ -360,6 +402,28 @@ export default class Commands {
                 message.react('❌');
                 return message.reply(err);
             }
+        } else if (command === 'addocr') {
+            const [targetCommand, targetCommandObject, text] = commandParser(message.content);
+            if (['prefix', 'roleID'].includes(targetCommand)) {
+                message.react('❌');
+                return message.reply(`Can not create ocr for base value \`${targetCommand}\`.`);
+            }
+            if (targetCommandObject === undefined) {
+                message.react('❌');
+                return message.reply(`Can not create ocr for \`${targetCommand}\` it doesn't exist.`);
+            }
+
+            options.addOcr(text, targetCommand);
+            message.react('✅');
+            return message.channel.send(`Created an ocr for \`${targetCommand}\`\n With the text:\n\`${text}\``);
+        } else if (command === 'removeocr') {
+            const delCommand = args.filter(i => i).join(' ');
+            if (!options.currentOcr[delCommand]) {
+                message.react('❌');
+                return message.reply(`Couldn't delete ocr \`${delCommand}\` as it doesn't exist.`);
+            }
+        } else if (command === 'ocrlist') {
+            return message.reply(options.getList('ocr'));
         }
     }
 }
