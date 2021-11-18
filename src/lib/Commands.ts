@@ -1,8 +1,11 @@
 import { options } from '../app';
 import { Message, MessageReaction } from 'discord.js';
+import getEmoji from 'get-random-emoji';
+import tesseract from 'node-tesseract-ocr';
+
 const channels = JSON.parse(process.env.CHANNEL_IDS) as string[];
 
-function commandParser(message: string): [string, string] {
+function commandParser(message: string): [...ReturnType<typeof options['getOption']>, string] {
     let cmd = '';
     // filter out empty spaces ie message is .test  2 => ['.test', '','2'] => ['.test', '2']
     const splitMessage = message.split(' ').filter(i => i);
@@ -25,7 +28,10 @@ function commandParser(message: string): [string, string] {
 
     // take out newline from command
     [cmd, ...addToMessage] = cmd.split('\n');
-    return [cmd, (addToMessage.join('\n') + ' ' + message).trimStart()];
+
+    // Convert mobile user tagging to desktop version: <@!userid> => <@userid>
+    cmd.replace(/<@!(\d+)>/g, '<@$1>');
+    return [...options.getOption(cmd), (addToMessage.join('\n') + ' ' + message).trimStart()];
 }
 function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string[], message: Message) {
     const prefix = options.currentOptions.prefix;
@@ -50,12 +56,12 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
     }
 
     try {
-        const [devCommand, devResponse] = commandParser(message.content);
+        const [devCommand, devObject, devResponse] = commandParser(message.content);
         if (['prefix', 'roleID'].includes(devCommand)) {
             throw `Can not \`${command}\` base value \`${devCommand}\` as a command.`;
         }
 
-        if (isAdd === (options.getOption(devCommand)[1] != undefined)) {
+        if (isAdd === (devObject != undefined)) {
             throw `Auto-reply for \`${devCommand}\` ${isAdd ? 'already exists' : "doesn't exist"}.`;
         }
 
@@ -74,7 +80,12 @@ function addOrEditCommand(command: 'add' | 'edit', isMeme: boolean, args: string
             return message.channel.send(`Edited isMeme parameter of \`${devCommand}\` to \`${devResponse}\`.`);
         }
 
-        options.handleOption(devCommand, devResponse, message.attachments.array(), isMeme);
+        options.handleOption(
+            devCommand,
+            devResponse,
+            message.attachments.array(),
+            isAdd && !isEditMeme ? isMeme : devObject.isMeme
+        );
         message.react('✅');
         return message.channel.send(
             `${isAdd ? 'Add' : 'Edit'}ed auto-reply: \`${devCommand}\`, ${
@@ -153,30 +164,58 @@ export default class Commands {
         return null;
     }
 
-    //message should be type of Message from discord but that way typescript throws error on line 8
     public async handleMessage(message: Message): Promise<Message | MessageReaction> {
         if (message.author.bot) return;
 
         //check for auto-response and if found dont continue
-        if (channels.includes(message.channel.id)) {
-            const messageOptions = options.getOption(message.content);
-            if (messageOptions[1]) {
-                const spam = this.checkSpam(messageOptions[0], message.author.id);
-                if (spam === 'bruh') {
-                    return message.react('🤬');
-                }
 
-                if (spam === null) {
-                    message.react('👍');
-                }
+        const messageOptions = options.getOption(message.content);
+        if (messageOptions[1] && (messageOptions[1].isMeme || channels.includes(message.channel.id))) {
+            const spam = this.checkSpam(messageOptions[0], message.author.id);
+            if (spam === 'bruh') {
+                return message.react('🤬');
+            }
 
-                if (spam || !messageOptions[1].isMeme) {
-                    return message.reply((spam || messageOptions[1]) as string);
-                }
+            if (spam === null) {
+                message.react('👍');
+            }
 
-                return message.channel.send(messageOptions[1] as string);
+            if (spam || !messageOptions[1].isMeme) {
+                return message.reply((spam || messageOptions[1]) as string);
+            }
+
+            return message.channel.send(messageOptions[1] as string);
+        } else if (
+            message.content.length === 0 &&
+            message.attachments.first() &&
+            channels.includes(message.channel.id)
+        ) {
+            //kannasearch
+            message
+                .react('<a:kannaSearch:853189008401629215>')
+                .catch(_err =>
+                    console.warn(
+                        "Couldn't react with kannaSearch maybe we're on a different server or kanna is gone :'("
+                    )
+                );
+            try {
+                const txt = await tesseract.recognize(message.attachments.first().url, {
+                    lang: 'eng'
+                });
+                const response = options.getOcrResponse(txt);
+                if (response) {
+                    response.content = (
+                        response.content +
+                        "\n\nFrom the image you've provided I've tried to figure out your issue and respond accordingly.\n" +
+                        "If the solution doesn't fixes your problem ask for a human to help you out :)."
+                    ).trim();
+                    message.reply(response);
+                }
+            } catch (err) {
+                console.error(err);
             }
         }
+
         //dont continue if doesnt start with prefix or is an other bot
         const prefix = options.currentOptions.prefix;
         const roleID = options.currentOptions.roleID;
@@ -186,28 +225,54 @@ export default class Commands {
 
         //get arguments and command
         const args = message.content.slice(prefix.length).trim().split(/ +/);
-        const command = args.shift().trim();
+        const command = args.shift().trim().toLowerCase();
 
         const isOwner = message.guild.ownerID === message.author.id;
-        if (!message.member.roles.cache.find(r => r.id == roleID) && !isOwner) {
-            if (command === 'list' || command === 'memeList') {
-                const checkSpam = this.checkSpam(command, message.author.id);
-                if (checkSpam === 'bruh') {
-                    return message.react('🤬');
-                }
+        const isNotManager = !message.member.roles.cache.find(r => r.id == roleID) && !isOwner;
+        const isNotDesignatedChannels = !channels.includes(message.channel.id) && channels.length != 0;
 
-                if (checkSpam === null) {
-                    message.react('👍');
-                }
-
-                return message.reply(checkSpam || options.getList(command === 'memeList'));
-            }
-
+        if (command === 'list' && isNotDesignatedChannels) {
             return;
         }
 
-        //check if its on correct channel
-        if (!channels.includes(message.channel.id) && channels.length != 0) {
+        if (command === 'list' || command === 'memelist') {
+            const checkSpam = this.checkSpam(command, message.author.id);
+            if (checkSpam === 'bruh') {
+                return message.react('🤬');
+            }
+
+            if (checkSpam === null) {
+                message.react('👍');
+            }
+
+            return message.reply(checkSpam || options.getList(command));
+        }
+
+        // don't continue if the user isn't an admin.
+        if (isNotManager) return;
+
+        if (
+            ![
+                'prefix',
+                'setrole',
+                'add',
+                'edit',
+                'addmeme',
+                'editmeme',
+                'remove',
+                'list',
+                'alias',
+                'rename',
+                'addocr',
+                'removeocr',
+                'ocrlist'
+            ].includes(command)
+        ) {
+            return message.react(getEmoji());
+        }
+
+        // check if its on correct channel
+        if (isNotDesignatedChannels) {
             message.react('❌');
             return message.reply(
                 `Any commands should be run on ${channels.map(channel => `<#${channel}>`).join(', ')}`
@@ -225,7 +290,7 @@ export default class Commands {
             options.handleBaseOptionOrAlias('prefix', newPrefix);
             message.react('✅');
             return message.reply(`Changed prefix from \`${prefix}\` to \`${newPrefix}\``);
-        } else if (command === 'setRole' && isOwner) {
+        } else if (command === 'setrole' && isOwner) {
             if (args.length < 1) {
                 message.react('✋');
                 return message.reply(`**Correct Usage**: \`${prefix}setRole <roleID>\``);
@@ -235,8 +300,8 @@ export default class Commands {
             options.handleBaseOptionOrAlias('roleID', newRole);
             message.react('✅');
             return message.reply(`Changed roleID to \`${newRole}\``);
-        } else if (['add', 'edit', 'addMeme', 'editMeme'].includes(command)) {
-            addOrEditCommand(command.replace('Meme', '') as 'add' | 'edit', command.includes('Meme'), args, message);
+        } else if (['add', 'edit', 'addmeme', 'editmeme'].includes(command)) {
+            addOrEditCommand(command.replace('meme', '') as 'add' | 'edit', command.includes('meme'), args, message);
         } else if (command === 'remove') {
             //check for missing arguments cause people dumb
             if (args.length < 1) {
@@ -245,21 +310,19 @@ export default class Commands {
             }
 
             const delCommand = args.filter(i => i).join(' ');
-            if (['prefix', 'roleID'].includes(delCommand)) {
-                return message.reply(`Can not remove base value \`${delCommand}\``);
+            const opt = options.getOption(delCommand, true);
+            if (['prefix', 'roleID'].includes(opt[0])) {
+                return message.reply(`Can not remove base value \`${opt[0]}\``);
             }
-            const opt = options.getOption(delCommand, true)[1];
-            if (!opt) {
+
+            if (!opt[1]) {
                 message.react('❌');
                 return message.reply(`Couldn't delete command \`${delCommand}\` as it doesn't exist.`);
             }
-            const isAlias = typeof opt === 'string' ? 'alias' : '';
-            options.deleteCommand(delCommand);
+            const isAlias = typeof opt[1] === 'string' ? 'alias' : '';
+            options.deleteCommand(opt[0]);
             message.react('🚮');
-            return message.reply(`Deleted auto-reply for ${isAlias} \`${delCommand}\``);
-        } else if (command === 'list' || command === 'memeList') {
-            message.react('✅');
-            return message.reply(options.getList(command === 'memeList'));
+            return message.reply(`Deleted auto-reply for ${isAlias} \`${opt[0]}\``);
         } else if (command === 'alias') {
             if (args.length < 2) {
                 message.react('✋');
@@ -269,32 +332,32 @@ export default class Commands {
                 );
             }
             try {
-                const [devAlias, devExistingCMD] = commandParser(message.content);
+                const [devAlias, devObject, devExistingCMD] = commandParser(message.content);
+                const existingCMD = options.getOption(devExistingCMD);
+
                 if (['prefix', 'roleID'].includes(devAlias)) {
                     message.react('❌');
                     return message.reply(`Can not alias base value \`${devAlias}\` as a command.`);
                 }
 
-                if (['prefix', 'roleID'].includes(devExistingCMD)) {
+                if (['prefix', 'roleID'].includes(existingCMD[0])) {
                     message.react('❌');
                     return message.reply(`Can not alias base value \`${devExistingCMD}\` as a target.`);
                 }
 
-                if (options.getOption(devExistingCMD)[1] === undefined) {
+                if (existingCMD[1] === undefined) {
                     message.react('❌');
                     return message.reply(`Can not target alias for \`${devExistingCMD}\` it doesn't exist.`);
                 }
 
-                if (options.getOption(devAlias)[1] !== undefined) {
+                if (devObject !== undefined) {
                     message.react('❌');
                     return message.reply(`Can not alias \`${devAlias}\` as it already exists remove it first.`);
                 }
 
-                options.handleBaseOptionOrAlias(devAlias, options.getOption(devExistingCMD)[0]);
+                options.handleBaseOptionOrAlias(devAlias, existingCMD[0]);
                 message.react('✅');
-                return message.channel.send(
-                    `Added alias \`${devAlias}\` => \`${options.getOption(devExistingCMD)[0]}\``
-                );
+                return message.channel.send(`Added alias \`${devAlias}\` => \`${existingCMD[0]}\``);
             } catch (err) {
                 message.react('❌');
                 return message.reply(err);
@@ -310,20 +373,23 @@ export default class Commands {
             }
 
             try {
-                const [devCurrent, devRename] = commandParser(message.content);
+                const [devCurrent, devObject, devRename] = commandParser(message.content);
+                const renameCMD = options.getOption(devRename);
+
                 if (['prefix', 'roleID'].includes(devCurrent)) {
                     message.react('❌');
                     return message.reply(`Can not rename base value \`${devCurrent}\`.`);
                 }
-                if (['prefix', 'roleID'].includes(devRename)) {
+                if (['prefix', 'roleID'].includes(renameCMD[0])) {
                     message.react('❌');
                     return message.reply(`Can not rename to base value \`${devRename}\`.`);
                 }
-                if (options.getOption(devCurrent)[1] === undefined) {
+
+                if (devObject === undefined) {
                     message.react('❌');
                     return message.reply(`Can not rename \`${devCurrent}\` it doesn't exist.`);
                 }
-                if (options.getOption(devRename)[1] !== undefined) {
+                if (renameCMD[1] !== undefined) {
                     message.react('❌');
                     return message.reply(`Can not rename to \`${devRename}\` as it already exists.`);
                 }
@@ -336,6 +402,28 @@ export default class Commands {
                 message.react('❌');
                 return message.reply(err);
             }
+        } else if (command === 'addocr') {
+            const [targetCommand, targetCommandObject, text] = commandParser(message.content);
+            if (['prefix', 'roleID'].includes(targetCommand)) {
+                message.react('❌');
+                return message.reply(`Can not create ocr for base value \`${targetCommand}\`.`);
+            }
+            if (targetCommandObject === undefined) {
+                message.react('❌');
+                return message.reply(`Can not create ocr for \`${targetCommand}\` it doesn't exist.`);
+            }
+
+            options.addOcr(text, targetCommand);
+            message.react('✅');
+            return message.channel.send(`Created an ocr for \`${targetCommand}\`\n With the text:\n\`${text}\``);
+        } else if (command === 'removeocr') {
+            const delCommand = args.filter(i => i).join(' ');
+            if (!options.currentOcr[delCommand]) {
+                message.react('❌');
+                return message.reply(`Couldn't delete ocr \`${delCommand}\` as it doesn't exist.`);
+            }
+        } else if (command === 'ocrlist') {
+            return message.reply(options.getList('ocr'));
         }
     }
 }
