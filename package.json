@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "death": "^1.1.0",
-    "discord.js": "^13.3.1",
+    "discord.js": "^12.5.3",
     "dotenv": "^10.0.0",
     "get-random-emoji": "^1.0.0",
     "node-tesseract-ocr": "^2.2.1",
