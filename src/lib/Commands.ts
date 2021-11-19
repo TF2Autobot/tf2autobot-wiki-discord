@@ -403,6 +403,10 @@ export default class Commands {
                 return message.reply(err);
             }
         } else if (command === 'addocr') {
+            if (args.length < 2) {
+                message.react('✋');
+                return message.reply(`**Correct Usage**: \`${prefix}addOcr <existingKeyword> <textToSearchFor>\``);
+            }
             const [targetCommand, targetCommandObject, text] = commandParser(message.content);
             if (['prefix', 'roleID'].includes(targetCommand)) {
                 message.react('❌');
@@ -417,6 +421,10 @@ export default class Commands {
             message.react('✅');
             return message.channel.send(`Created an ocr for \`${targetCommand}\`\n With the text:\n\`${text}\``);
         } else if (command === 'removeocr') {
+            if (args.length < 1) {
+                message.react('✋');
+                return message.reply(`**Correct Usage**: \`${prefix}removeOcr <textToSearchFor>\``);
+            }
             const delCommand = args.filter(i => i).join(' ');
             if (!options.currentOcr[delCommand]) {
                 message.react('❌');
