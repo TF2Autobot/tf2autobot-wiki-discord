@@ -185,11 +185,7 @@ export default class Commands {
             }
 
             return message.channel.send(messageOptions[1] as string);
-        } else if (
-            message.content.length === 0 &&
-            message.attachments.first() &&
-            channels.includes(message.channel.id)
-        ) {
+        } else if (message.attachments.first() && channels.includes(message.channel.id)) {
             //kannasearch
             message
                 .react('<a:kannaSearch:853189008401629215>')
@@ -204,12 +200,12 @@ export default class Commands {
                 });
                 const response = options.getOcrResponse(txt);
                 if (response) {
-                    response.content = (
-                        response.content +
+                    const content = (
+                        (response.content || '') +
                         "\n\nFrom the image you've provided I've tried to figure out your issue and respond accordingly.\n" +
                         "If the solution doesn't fixes your problem ask for a human to help you out :)."
                     ).trim();
-                    message.reply(response);
+                    message.reply(Object.assign({}, response, { content }));
                 }
             } catch (err) {
                 console.error(err);
